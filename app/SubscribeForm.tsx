@@ -32,7 +32,7 @@ export default function SubscribeForm() {
     return (
       <p
         className="text-[9px] uppercase tracking-[0.24em]"
-        style={{ fontFamily: 'var(--font-mono)', color: '#4a8a5a' }}
+        style={{ fontFamily: 'var(--font-mono)', color: '#5a9e6a' }}
       >
         {msg}
       </p>
@@ -41,32 +41,32 @@ export default function SubscribeForm() {
 
   return (
     <form onSubmit={submit} className="flex items-end gap-5">
-      <input
-        type="email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        placeholder="your@email.com"
-        className="w-52 border-0 bg-transparent px-0 py-1.5 text-[11px] placeholder-[#1e2c3a] focus:outline-none transition-colors"
-        style={{
-          fontFamily: 'var(--font-mono)',
-          color: 'var(--text)',
-          borderBottom: '1px solid var(--border)',
-        }}
-        onFocus={e => { e.currentTarget.style.borderBottomColor = 'var(--accent-dim)' }}
-        onBlur={e => { e.currentTarget.style.borderBottomColor = 'var(--border)' }}
-      />
+      <div className="field-line">
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="your@email.com"
+          className="w-52 border-0 bg-transparent px-0 py-1.5 text-[11px] focus:outline-none transition-colors"
+          style={{
+            fontFamily: 'var(--font-mono)',
+            color: 'var(--t1)',
+            caretColor: 'var(--ac)',
+          }}
+        />
+      </div>
       <button
         type="submit"
         disabled={!email.trim() || status === 'loading'}
-        className="pb-1.5 text-[9px] uppercase tracking-[0.24em] transition-opacity disabled:opacity-25 hover:opacity-100"
-        style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}
+        className="pb-1.5 text-[9px] uppercase tracking-[0.24em] transition-all hover:opacity-100 disabled:opacity-25"
+        style={{ fontFamily: 'var(--font-mono)', color: 'var(--t2)' }}
       >
         {status === 'loading' ? '…' : 'Subscribe'}
       </button>
       {status === 'error' && (
         <p
           className="text-[9px] uppercase tracking-wider"
-          style={{ fontFamily: 'var(--font-mono)', color: '#c07070' }}
+          style={{ fontFamily: 'var(--font-mono)', color: '#c08080' }}
         >
           {msg}
         </p>
