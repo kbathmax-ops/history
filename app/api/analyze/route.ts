@@ -4,7 +4,7 @@ import { computeForecast } from '@/lib/agent/forecast'
 import { generateNarrative } from '@/lib/claude/narrative'
 import { EpisodeQuery } from '@/lib/db/episodes'
 
-export const maxDuration = 10
+export const maxDuration = 60
 
 export async function POST(req: NextRequest) {
   try {

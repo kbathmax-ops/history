@@ -112,11 +112,19 @@ export default function HomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: query.trim(), filters }),
       })
-      if (!res.ok) {
-        const err = await res.json()
-        throw new Error(err.error ?? 'Request failed')
+
+      let json: Record<string, unknown>
+      try {
+        json = await res.json()
+      } catch {
+        throw new Error('Server returned an unexpected response. Please try again.')
       }
-      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error((json.error as string) ?? 'Request failed')
+      }
+
+      const data = json
       sessionStorage.setItem('sanctions_result', JSON.stringify({ query, data }))
       router.push('/results')
     } catch (err) {

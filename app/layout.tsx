@@ -74,25 +74,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <main>{children}</main>
 
-        <footer className="px-8 py-6" style={{ borderTop: '1px solid var(--bd)' }}>
+        <footer className="px-8 py-6" style={{ borderTop: '1px solid var(--bd2)' }}>
           <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
             <p
-              className="text-[9px] uppercase tracking-[0.28em]"
-              style={{ fontFamily: 'var(--font-mono)', color: 'var(--t4)' }}
+              className="text-[11px] font-medium tracking-tight"
+              style={{ color: 'var(--t2)' }}
             >
-              Sanctions Precedent · Intelligence Platform
+              Sanctions Precedent
             </p>
             <div className="flex items-center gap-6">
               <p
-                className="text-[9px] uppercase tracking-[0.28em]"
-                style={{ fontFamily: 'var(--font-mono)', color: 'var(--t4)' }}
+                className="text-[10px] uppercase tracking-[0.22em]"
+                style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}
               >
                 Historical precedent · Not policy advice
               </p>
               <Link
                 href="/terms"
-                className="text-[9px] uppercase tracking-[0.28em] transition-opacity hover:opacity-80"
-                style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}
+                className="text-[10px] uppercase tracking-[0.22em] transition-opacity hover:opacity-60"
+                style={{ fontFamily: 'var(--font-mono)', color: 'var(--t2)' }}
               >
                 Terms of Use
               </Link>
