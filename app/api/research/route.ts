@@ -4,6 +4,7 @@ import { supabase } from '@/lib/db/episodes'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 const SYSTEM_PROMPT = `You are a sanctions historian and analyst. Generate detailed, historically accurate sanctions episodes in structured JSON format. Be precise with dates, economic figures, and outcomes. Only generate episodes for real, documented historical events.`
