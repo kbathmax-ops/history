@@ -75,19 +75,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main>{children}</main>
 
         <footer className="px-8 py-6" style={{ borderTop: '1px solid var(--bd)' }}>
-          <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
             <p
               className="text-[9px] uppercase tracking-[0.28em]"
               style={{ fontFamily: 'var(--font-mono)', color: 'var(--t4)' }}
             >
               Sanctions Precedent · Intelligence Platform
             </p>
-            <p
-              className="text-[9px] uppercase tracking-[0.28em]"
-              style={{ fontFamily: 'var(--font-mono)', color: 'var(--t4)' }}
-            >
-              Historical precedent · Not policy advice
-            </p>
+            <div className="flex items-center gap-6">
+              <p
+                className="text-[9px] uppercase tracking-[0.28em]"
+                style={{ fontFamily: 'var(--font-mono)', color: 'var(--t4)' }}
+              >
+                Historical precedent · Not policy advice
+              </p>
+              <Link
+                href="/terms"
+                className="text-[9px] uppercase tracking-[0.28em] transition-opacity hover:opacity-80"
+                style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}
+              >
+                Terms of Use
+              </Link>
+            </div>
           </div>
         </footer>
 

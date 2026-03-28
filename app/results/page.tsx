@@ -180,6 +180,17 @@ export default function ResultsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
+
+      {/* Disclaimer */}
+      <div className="border-l-2 border-[#2a3a4a] pl-4 py-1">
+        <p className="text-xs text-[#555] leading-relaxed">
+          This analysis is generated from historical sanctions precedents and statistical models.
+          It is <strong className="text-[#666]">not legal, compliance, financial, or policy advice</strong>.
+          Do not rely on it as the sole basis for any decision.{' '}
+          <a href="/terms" className="underline hover:text-[#888] transition-colors">Terms of Use</a>
+        </p>
+      </div>
+
       {/* Query header */}
       <div className="flex items-start justify-between gap-6">
         <div>
