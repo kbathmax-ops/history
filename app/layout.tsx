@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { Bricolage_Grotesque, IBM_Plex_Mono } from 'next/font/google'
 import Link from 'next/link'
 import './globals.css'
-import SubscribeForm from './SubscribeForm'
 
 const bricolage = Bricolage_Grotesque({
   subsets: ['latin'],
@@ -75,15 +74,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <main>{children}</main>
 
-        <footer className="px-8 py-8" style={{ borderTop: '1px solid var(--bd)' }}>
-          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+        <footer className="px-8 py-6" style={{ borderTop: '1px solid var(--bd)' }}>
+          <div className="max-w-6xl mx-auto flex items-center justify-between">
             <p
               className="text-[9px] uppercase tracking-[0.28em]"
-              style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--t4)' }}
             >
-              Receive updates when new precedents are indexed
+              Sanctions Precedent · Intelligence Platform
             </p>
-            <SubscribeForm />
+            <p
+              className="text-[9px] uppercase tracking-[0.28em]"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--t4)' }}
+            >
+              Historical precedent · Not policy advice
+            </p>
           </div>
         </footer>
 
