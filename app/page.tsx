@@ -165,8 +165,8 @@ export default function HomePage() {
         >
           {/* Top label */}
           <p
-            className="a-fade mb-8 text-[9.5px] uppercase tracking-[0.3em]"
-            style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)', animationDelay: '0.1s' }}
+            className="a-fade mb-8 text-[11px] uppercase tracking-[0.28em]"
+            style={{ fontFamily: 'var(--font-mono)', color: 'var(--t2)', animationDelay: '0.1s' }}
           >
             Economic Statecraft · Precedent Database
           </p>

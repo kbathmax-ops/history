@@ -51,7 +51,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </Link>
 
           <nav
-            className="flex items-center gap-0.5 rounded-full border px-4 py-[7px]"
+            className="flex items-center rounded-full border px-4 py-[7px]"
             style={{ borderColor: 'var(--bd2)', background: 'var(--bg2)' }}
           >
             <Link
@@ -60,14 +60,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               style={{ fontFamily: 'var(--font-mono)', color: 'var(--t2)' }}
             >
               Analysis
-            </Link>
-            <span style={{ color: 'var(--bd2)' }}>·</span>
-            <Link
-              href="/admin"
-              className="px-3 text-[10px] uppercase tracking-[0.2em] transition-colors"
-              style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}
-            >
-              Admin
             </Link>
           </nav>
         </header>
@@ -83,12 +75,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Sanctions Precedent
             </p>
             <div className="flex items-center gap-6">
-              <p
-                className="text-[10px] uppercase tracking-[0.22em]"
-                style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}
-              >
-                Historical precedent · Not policy advice
-              </p>
               <Link
                 href="/terms"
                 className="text-[10px] uppercase tracking-[0.22em] transition-opacity hover:opacity-60"
