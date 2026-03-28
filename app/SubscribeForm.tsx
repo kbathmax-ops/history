@@ -31,8 +31,8 @@ export default function SubscribeForm() {
   if (status === 'ok') {
     return (
       <p
-        className="text-[10px] text-green-500/70 uppercase tracking-[0.2em]"
-        style={{ fontFamily: 'var(--font-mono)' }}
+        className="text-[9px] uppercase tracking-[0.24em]"
+        style={{ fontFamily: 'var(--font-mono)', color: '#4a8a5a' }}
       >
         {msg}
       </p>
@@ -40,29 +40,33 @@ export default function SubscribeForm() {
   }
 
   return (
-    <form onSubmit={submit} className="flex items-end gap-4">
-      <div className="relative">
-        <input
-          type="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          placeholder="your@email.com"
-          className="bg-transparent border-0 border-b border-[#252525] focus:border-[#444] px-0 py-1.5 text-[#f0ede8] placeholder-[#2e2e2e] focus:outline-none text-[11px] w-52 transition-colors"
-          style={{ fontFamily: 'var(--font-mono)' }}
-        />
-      </div>
+    <form onSubmit={submit} className="flex items-end gap-5">
+      <input
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="your@email.com"
+        className="w-52 border-0 bg-transparent px-0 py-1.5 text-[11px] placeholder-[#1e2c3a] focus:outline-none transition-colors"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          color: 'var(--text)',
+          borderBottom: '1px solid var(--border)',
+        }}
+        onFocus={e => { e.currentTarget.style.borderBottomColor = 'var(--accent-dim)' }}
+        onBlur={e => { e.currentTarget.style.borderBottomColor = 'var(--border)' }}
+      />
       <button
         type="submit"
         disabled={!email.trim() || status === 'loading'}
-        className="text-[10px] text-[#444] hover:text-[#888] transition-colors uppercase tracking-[0.2em] disabled:opacity-30 pb-1.5"
-        style={{ fontFamily: 'var(--font-mono)' }}
+        className="pb-1.5 text-[9px] uppercase tracking-[0.24em] transition-opacity disabled:opacity-25 hover:opacity-100"
+        style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}
       >
         {status === 'loading' ? '…' : 'Subscribe'}
       </button>
       {status === 'error' && (
         <p
-          className="text-[10px] text-red-400/70 uppercase tracking-wider"
-          style={{ fontFamily: 'var(--font-mono)' }}
+          className="text-[9px] uppercase tracking-wider"
+          style={{ fontFamily: 'var(--font-mono)', color: '#c07070' }}
         >
           {msg}
         </p>

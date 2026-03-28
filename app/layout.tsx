@@ -1,22 +1,24 @@
 import type { Metadata } from 'next'
-import { Playfair_Display, Syne, DM_Mono } from 'next/font/google'
+import { Cormorant_Garamond, Syne, IBM_Plex_Mono } from 'next/font/google'
 import Link from 'next/link'
 import './globals.css'
 import SubscribeForm from './SubscribeForm'
 
-const playfair = Playfair_Display({
+const cormorant = Cormorant_Garamond({
   subsets: ['latin'],
-  variable: '--font-playfair',
+  weight: ['300', '400', '500', '600'],
+  style: ['normal', 'italic'],
+  variable: '--font-display',
   display: 'swap',
 })
 
 const syne = Syne({
   subsets: ['latin'],
-  variable: '--font-syne',
+  variable: '--font-sans',
   display: 'swap',
 })
 
-const dmMono = DM_Mono({
+const ibmMono = IBM_Plex_Mono({
   subsets: ['latin'],
   weight: ['300', '400', '500'],
   variable: '--font-mono',
@@ -28,49 +30,63 @@ export const metadata: Metadata = {
   description: 'Agentic sanctions intelligence — historical precedent analysis and scenario forecasting',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${playfair.variable} ${syne.variable} ${dmMono.variable}`}>
+    <html
+      lang="en"
+      className={`${cormorant.variable} ${syne.variable} ${ibmMono.variable}`}
+    >
       <body
-        className="bg-[#0c0c0c] text-[#f0ede8] min-h-screen antialiased"
-        style={{ fontFamily: 'var(--font-syne), sans-serif' }}
+        className="min-h-screen antialiased"
+        style={{
+          background: 'var(--bg)',
+          color: 'var(--text)',
+          fontFamily: 'var(--font-sans), sans-serif',
+        }}
       >
-        <header className="sticky top-0 z-50 px-8 py-5 flex items-center justify-between bg-[#0c0c0c]/90 backdrop-blur-md border-b border-[#181818]">
+        {/* Header */}
+        <header
+          className="sticky top-0 z-50 flex items-center justify-between px-8 py-[18px]"
+          style={{
+            background: 'var(--bg)/95',
+            backdropFilter: 'blur(12px)',
+            borderBottom: '1px solid var(--border)',
+          }}
+        >
           <Link
             href="/"
-            className="flex items-baseline gap-3 hover:opacity-75 transition-opacity"
+            className="flex items-baseline gap-3 transition-opacity hover:opacity-60"
           >
             <span
-              className="text-[#f0ede8] font-medium text-xl tracking-tight"
-              style={{ fontFamily: 'var(--font-playfair)' }}
+              className="font-medium text-[22px] tracking-tight"
+              style={{ fontFamily: 'var(--font-display)', color: 'var(--text)' }}
             >
               Sanctions Precedent
             </span>
             <span
-              className="text-[9px] text-[#4a4a4a] uppercase tracking-[0.22em]"
-              style={{ fontFamily: 'var(--font-mono)' }}
+              className="text-[9px] uppercase tracking-[0.28em]"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}
             >
               Intelligence
             </span>
           </Link>
 
-          <nav className="border border-[#282828] rounded-full px-5 py-2 flex items-center gap-6 bg-[#0e0e0e]">
+          <nav
+            className="flex items-center gap-1 rounded-full border px-4 py-[7px]"
+            style={{ borderColor: 'var(--border)', background: 'var(--bg-panel)' }}
+          >
             <Link
               href="/"
-              className="text-[11px] text-[#666] hover:text-[#f0ede8] transition-colors tracking-widest uppercase"
-              style={{ fontFamily: 'var(--font-mono)' }}
+              className="px-3 text-[10px] uppercase tracking-[0.2em] transition-colors hover:opacity-100"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}
             >
               Analysis
             </Link>
-            <span className="text-[#282828]">·</span>
+            <span style={{ color: 'var(--text-muted)' }}>·</span>
             <Link
               href="/admin"
-              className="text-[11px] text-[#666] hover:text-[#f0ede8] transition-colors tracking-widest uppercase"
-              style={{ fontFamily: 'var(--font-mono)' }}
+              className="px-3 text-[10px] uppercase tracking-[0.2em] transition-colors hover:opacity-100"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}
             >
               Admin
             </Link>
@@ -79,24 +95,22 @@ export default function RootLayout({
 
         <main>{children}</main>
 
-        <SubscribeStrip />
+        {/* Footer */}
+        <footer
+          className="px-8 py-10"
+          style={{ borderTop: '1px solid var(--border)' }}
+        >
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+            <p
+              className="text-[9px] uppercase tracking-[0.28em]"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}
+            >
+              Receive updates when new precedents are indexed
+            </p>
+            <SubscribeForm />
+          </div>
+        </footer>
       </body>
     </html>
-  )
-}
-
-function SubscribeStrip() {
-  return (
-    <footer className="border-t border-[#181818] px-8 py-10">
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-        <p
-          className="text-[10px] text-[#383838] uppercase tracking-[0.22em]"
-          style={{ fontFamily: 'var(--font-mono)' }}
-        >
-          Receive updates when new precedents are indexed
-        </p>
-        <SubscribeForm />
-      </div>
-    </footer>
   )
 }

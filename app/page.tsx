@@ -43,7 +43,6 @@ export default function HomePage() {
     if (!query.trim()) return
     setLoading(true)
     setError('')
-
     try {
       const filters: Record<string, unknown> = {}
       if (multilateral === 'true') filters.multilateral = true
@@ -74,124 +73,184 @@ export default function HomePage() {
 
   return (
     <div>
-      {/* ── Hero — light/off-white editorial section ── */}
-      <section className="bg-[#f0ede8] text-[#0c0c0c] overflow-hidden">
-        <div className="max-w-7xl mx-auto px-8 pt-20 pb-0">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.7fr] gap-12 lg:gap-20 items-end pb-20">
 
-            {/* Left: description */}
-            <div
-              className="animate-fade-in-up"
-              style={{ animationDelay: '0.05s' }}
-            >
-              <p
-                className="text-[9px] uppercase tracking-[0.28em] text-[#9a958e] mb-10"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              >
-                Economic statecraft · Precedent database
-              </p>
-              <p className="text-[15px] text-[#6b665f] leading-[1.75] mb-10 max-w-[280px]">
-                Retrieve the most similar historical sanctions episodes, compute scenario
-                probabilities, and generate structured analytical memos.
-              </p>
-              <button
-                onClick={() =>
-                  document.getElementById('form-section')?.scrollIntoView({ behavior: 'smooth' })
-                }
-                className="flex items-center gap-2 text-[13px] text-[#0c0c0c] hover:gap-5 transition-all duration-300 group"
-              >
-                <span className="text-base">→</span>
-                <span
-                  className="border-b border-[#0c0c0c]/25 pb-px"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  Run a scenario
-                </span>
-              </button>
-            </div>
+      {/* ─── SPLIT HERO ─── */}
+      <section className="flex min-h-[90vh] overflow-hidden">
 
-            {/* Right: big display heading */}
-            <div
-              className="animate-fade-in-up"
-              style={{ animationDelay: '0.18s' }}
+        {/* Left: text panel */}
+        <div
+          className="relative z-10 flex w-full flex-col justify-between px-10 py-16 lg:w-[46%] lg:px-16"
+          style={{ background: 'var(--bg)' }}
+        >
+          {/* Top label */}
+          <p
+            className="text-[9px] uppercase tracking-[0.3em] anim-slide"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              color: 'var(--text-muted)',
+              animationDelay: '0s',
+            }}
+          >
+            Economic Statecraft · Intelligence Platform
+          </p>
+
+          {/* Centre: headline */}
+          <div>
+            <h1
+              className="font-light italic leading-[0.9] tracking-tight anim-reveal"
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(3.5rem, 6vw, 6rem)',
+                color: 'var(--text)',
+                animationDelay: '0.1s',
+              }}
             >
-              <h1
-                className="font-medium tracking-tight leading-[0.92] text-[#0c0c0c]"
+              Mapping
+              <br />
+              <span className="not-italic font-semibold">the weight</span>
+              <br />
+              of pressure.
+            </h1>
+
+            <p
+              className="mt-8 max-w-[28ch] text-[14px] leading-[1.85] anim-reveal"
+              style={{
+                fontFamily: 'var(--font-sans)',
+                color: 'var(--text-dim)',
+                animationDelay: '0.22s',
+              }}
+            >
+              Retrieve the most similar historical sanctions episodes, compute
+              scenario probabilities, and generate a structured analytical memo.
+            </p>
+
+            <button
+              onClick={() =>
+                document.getElementById('form-section')?.scrollIntoView({ behavior: 'smooth' })
+              }
+              className="mt-10 flex items-center gap-3 group anim-slide"
+              style={{ animationDelay: '0.35s' }}
+            >
+              <span
+                className="flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-300 group-hover:scale-110"
                 style={{
-                  fontFamily: 'var(--font-playfair)',
-                  fontSize: 'clamp(3.2rem, 7.5vw, 6.5rem)',
+                  borderColor: 'var(--accent-dim)',
+                  color: 'var(--accent)',
                 }}
               >
-                Mapping the
-                <br />
-                <em>geography</em>
-                <br />
-                of pressure.
-              </h1>
-            </div>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M1 6h10M6 1l5 5-5 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
+              <span
+                className="text-[11px] uppercase tracking-[0.22em] transition-colors group-hover:opacity-100"
+                style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent)' }}
+              >
+                Analyze a scenario
+              </span>
+            </button>
+          </div>
+
+          {/* Bottom: coordinates */}
+          <div
+            className="flex items-center gap-6 anim-slide"
+            style={{ animationDelay: '0.45s' }}
+          >
+            <span
+              className="text-[9px] uppercase tracking-[0.22em]"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}
+            >
+              78°N · Arctic Circle
+            </span>
+            <span style={{ color: 'var(--border)' }}>—</span>
+            <span
+              className="text-[9px] uppercase tracking-[0.22em]"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}
+            >
+              Geopolitical Frontier
+            </span>
+          </div>
+        </div>
+
+        {/* Right: full-height image */}
+        <div className="relative hidden flex-1 overflow-hidden lg:block anim-scale" style={{ animationDelay: '0s' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="https://images.unsplash.com/photo-1520769945061-0a448c463865?w=1400&q=85&fit=crop"
+            alt="Arctic landscape"
+            className="h-full w-full object-cover object-center"
+          />
+          {/* left bleed gradient */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(to right, var(--bg) 0%, var(--bg)/60 18%, transparent 50%)',
+            }}
+          />
+          {/* bottom label */}
+          <div className="absolute bottom-6 right-7">
+            <p
+              className="text-[8px] uppercase tracking-[0.3em]"
+              style={{ fontFamily: 'var(--font-mono)', color: 'rgba(220,228,238,0.3)' }}
+            >
+              Svalbard Archipelago
+            </p>
           </div>
         </div>
       </section>
 
-      {/* ── Full-bleed wilderness image — Arctic ── */}
-      <section
-        className="relative overflow-hidden animate-fade-in"
-        style={{ height: 'clamp(340px, 55vh, 680px)', animationDelay: '0.35s' }}
+      {/* ─── THIN META STRIP ─── */}
+      <div
+        className="flex items-center justify-between px-10 py-3 lg:px-16"
+        style={{ borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=1800&q=85&fit=crop"
-          alt="Arctic ice — geopolitical frontier"
-          className="w-full h-full object-cover object-center"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#f0ede8]/15 via-transparent to-[#0c0c0c]/75" />
-        <div className="absolute bottom-7 left-8 right-8 flex justify-between items-end">
-          <p
-            className="text-[9px] text-[#f0ede8]/50 uppercase tracking-[0.25em]"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
-            Arctic Circle — 78° N
-          </p>
-          <p
-            className="text-[9px] text-[#f0ede8]/35 uppercase tracking-[0.2em]"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
-            Geopolitical frontier
-          </p>
-        </div>
-      </section>
+        <span
+          className="text-[8px] uppercase tracking-[0.28em]"
+          style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}
+        >
+          Precedent database · Historical episode retrieval
+        </span>
+        <span
+          className="text-[8px] uppercase tracking-[0.28em]"
+          style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}
+        >
+          Probabilistic scenario forecasting
+        </span>
+      </div>
 
-      {/* ── Form section — dark ── */}
-      <section id="form-section" className="bg-[#0c0c0c] py-24 px-8">
-        <div className="max-w-3xl mx-auto">
+      {/* ─── FORM SECTION ─── */}
+      <section id="form-section" className="px-10 py-24 lg:px-16">
+        <div className="mx-auto max-w-2xl">
 
+          {/* Section heading */}
           <div className="mb-16">
             <p
-              className="text-[9px] uppercase tracking-[0.28em] text-[#383838] mb-7"
-              style={{ fontFamily: 'var(--font-mono)' }}
+              className="mb-6 text-[9px] uppercase tracking-[0.3em]"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}
             >
-              Scenario analysis
+              Scenario input
             </p>
             <h2
-              className="font-medium tracking-tight text-[#f0ede8]"
+              className="font-light italic leading-[0.95] tracking-tight"
               style={{
-                fontFamily: 'var(--font-playfair)',
-                fontSize: 'clamp(2.2rem, 4.5vw, 3.8rem)',
-                lineHeight: 1.05,
+                fontFamily: 'var(--font-display)',
+                fontSize: 'clamp(2.4rem, 4.5vw, 4rem)',
+                color: 'var(--text)',
               }}
             >
-              Describe the<br />
-              <em>scenario.</em>
+              Describe the
+              <br />
+              <span className="not-italic font-medium">scenario.</span>
             </h2>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-12">
+          <form onSubmit={handleSubmit} className="space-y-14">
 
-            {/* Query textarea */}
+            {/* Query */}
             <div>
               <label
-                className="block text-[9px] text-[#3d3d3d] uppercase tracking-[0.25em] mb-5"
-                style={{ fontFamily: 'var(--font-mono)' }}
+                className="mb-5 block text-[9px] uppercase tracking-[0.28em]"
+                style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}
               >
                 Scenario query
               </label>
@@ -200,14 +259,20 @@ export default function HomePage() {
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Describe the sanctions scenario — target country, initiators, objectives, instruments..."
                 rows={5}
-                className="w-full bg-transparent border-0 border-b border-[#252525] focus:border-[#4a4a4a] px-0 py-3 text-[#dedad4] placeholder-[#282828] focus:outline-none resize-none text-[15px] leading-[1.8] transition-colors"
-                style={{ fontFamily: 'var(--font-syne)' }}
                 maxLength={1000}
+                className="w-full resize-none border-0 bg-transparent px-0 py-3 text-[15px] leading-[1.9] placeholder-[#1e2c3a] focus:outline-none transition-colors"
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  color: 'var(--text)',
+                  borderBottom: '1px solid var(--border)',
+                }}
+                onFocus={e => { e.currentTarget.style.borderBottomColor = 'var(--accent-dim)' }}
+                onBlur={e => { e.currentTarget.style.borderBottomColor = 'var(--border)' }}
               />
-              <div className="flex justify-end mt-2">
+              <div className="mt-2 flex justify-end">
                 <span
-                  className="text-[10px] text-[#282828]"
-                  style={{ fontFamily: 'var(--font-mono)' }}
+                  className="text-[10px]"
+                  style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}
                 >
                   {query.length}/1000
                 </span>
@@ -216,68 +281,55 @@ export default function HomePage() {
 
             {/* Filters */}
             <div className="grid grid-cols-3 gap-10">
-              <div>
-                <label
-                  className="block text-[9px] text-[#3d3d3d] uppercase tracking-[0.25em] mb-5"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  Coalition
-                </label>
-                <select
-                  value={multilateral}
-                  onChange={e => setMultilateral(e.target.value)}
-                  className="w-full bg-transparent border-0 border-b border-[#252525] focus:border-[#4a4a4a] px-0 py-2 text-[#dedad4] focus:outline-none text-[13px] transition-colors appearance-none cursor-pointer"
-                  style={{ fontFamily: 'var(--font-syne)' }}
-                >
-                  <option value="" className="bg-[#111]">Any</option>
-                  <option value="true" className="bg-[#111]">Multilateral</option>
-                  <option value="false" className="bg-[#111]">Unilateral</option>
-                </select>
-              </div>
-
-              <div>
-                <label
-                  className="block text-[9px] text-[#3d3d3d] uppercase tracking-[0.25em] mb-5"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  Sector
-                </label>
-                <select
-                  value={sector}
-                  onChange={e => setSector(e.target.value)}
-                  className="w-full bg-transparent border-0 border-b border-[#252525] focus:border-[#4a4a4a] px-0 py-2 text-[#dedad4] focus:outline-none text-[13px] transition-colors appearance-none cursor-pointer"
-                  style={{ fontFamily: 'var(--font-syne)' }}
-                >
-                  {SECTORS.map(s => (
-                    <option key={s.value} value={s.value} className="bg-[#111]">{s.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label
-                  className="block text-[9px] text-[#3d3d3d] uppercase tracking-[0.25em] mb-5"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  Intensity
-                </label>
-                <select
-                  value={intensity}
-                  onChange={e => setIntensity(e.target.value)}
-                  className="w-full bg-transparent border-0 border-b border-[#252525] focus:border-[#4a4a4a] px-0 py-2 text-[#dedad4] focus:outline-none text-[13px] transition-colors appearance-none cursor-pointer"
-                  style={{ fontFamily: 'var(--font-syne)' }}
-                >
-                  {INTENSITIES.map(i => (
-                    <option key={i.value} value={i.value} className="bg-[#111]">{i.label}</option>
-                  ))}
-                </select>
-              </div>
+              {[
+                {
+                  label: 'Coalition',
+                  value: multilateral,
+                  setter: setMultilateral,
+                  options: [
+                    { value: '', label: 'Any' },
+                    { value: 'true', label: 'Multilateral' },
+                    { value: 'false', label: 'Unilateral' },
+                  ],
+                },
+                { label: 'Sector', value: sector, setter: setSector, options: SECTORS },
+                { label: 'Intensity', value: intensity, setter: setIntensity, options: INTENSITIES },
+              ].map(({ label, value, setter, options }) => (
+                <div key={label}>
+                  <label
+                    className="mb-5 block text-[9px] uppercase tracking-[0.28em]"
+                    style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}
+                  >
+                    {label}
+                  </label>
+                  <select
+                    value={value}
+                    onChange={e => setter(e.target.value)}
+                    className="w-full appearance-none border-0 bg-transparent px-0 py-2 text-[13px] focus:outline-none cursor-pointer transition-colors"
+                    style={{
+                      fontFamily: 'var(--font-sans)',
+                      color: 'var(--text)',
+                      borderBottom: '1px solid var(--border)',
+                    }}
+                  >
+                    {options.map(o => (
+                      <option key={o.value} value={o.value} style={{ background: '#06090f' }}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
             </div>
 
             {error && (
               <p
-                className="text-red-400/70 text-[13px] border-l border-red-800/40 pl-4"
-                style={{ fontFamily: 'var(--font-mono)' }}
+                className="border-l pl-4 text-[13px]"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  borderColor: '#7f3a3a',
+                  color: '#c07070',
+                }}
               >
                 {error}
               </p>
@@ -287,18 +339,23 @@ export default function HomePage() {
             <button
               type="submit"
               disabled={!query.trim() || loading}
-              className="group flex items-center gap-4 text-[#f0ede8] disabled:opacity-25 disabled:cursor-not-allowed transition-opacity"
+              className="group flex items-center gap-4 transition-opacity disabled:opacity-20 disabled:cursor-not-allowed"
             >
-              <span className="w-11 h-11 border border-[#2e2e2e] rounded-full flex items-center justify-center group-hover:border-[#555] group-hover:bg-[#161616] transition-all">
+              <span
+                className="flex h-11 w-11 items-center justify-center rounded-full border transition-all duration-300 group-hover:scale-105 group-enabled:group-hover:border-[var(--accent)]"
+                style={{ borderColor: 'var(--accent-dim)', color: 'var(--accent)' }}
+              >
                 {loading ? (
-                  <span className="text-xs text-[#555] animate-pulse">…</span>
+                  <span className="text-xs animate-pulse">…</span>
                 ) : (
-                  <span className="text-xs text-[#888] group-hover:text-[#f0ede8] transition-colors">→</span>
+                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                    <path d="M1 6h10M6 1l5 5-5 5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 )}
               </span>
               <span
-                className="text-[13px] tracking-widest uppercase text-[#888] group-hover:text-[#f0ede8] transition-colors"
-                style={{ fontFamily: 'var(--font-mono)' }}
+                className="text-[11px] uppercase tracking-[0.24em] transition-colors"
+                style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}
               >
                 {loading ? 'Analyzing precedents…' : 'Analyze scenario'}
               </span>
@@ -306,10 +363,13 @@ export default function HomePage() {
           </form>
 
           {/* Example queries */}
-          <div className="mt-20 pt-12 border-t border-[#181818]">
+          <div
+            className="mt-20 pt-12"
+            style={{ borderTop: '1px solid var(--border)' }}
+          >
             <p
-              className="text-[9px] text-[#2e2e2e] uppercase tracking-[0.28em] mb-8"
-              style={{ fontFamily: 'var(--font-mono)' }}
+              className="mb-8 text-[9px] uppercase tracking-[0.3em]"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}
             >
               Example queries
             </p>
@@ -318,10 +378,21 @@ export default function HomePage() {
                 <button
                   key={i}
                   onClick={() => setQuery(q)}
-                  className="block w-full text-left text-[13px] text-[#363636] hover:text-[#7a7a7a] transition-colors py-4 border-b border-[#141414] last:border-0 group"
-                  style={{ fontFamily: 'var(--font-syne)' }}
+                  className="group block w-full border-b py-4 text-left text-[13px] leading-relaxed transition-colors last:border-0"
+                  style={{
+                    fontFamily: 'var(--font-sans)',
+                    color: 'var(--text-dim)',
+                    borderColor: 'var(--border)',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--text)' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-dim)' }}
                 >
-                  <span className="mr-3 text-[#252525] group-hover:text-[#4a4a4a] transition-colors text-xs">↗</span>
+                  <span
+                    className="mr-3 text-[10px] transition-colors"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    ↗
+                  </span>
                   {q}
                 </button>
               ))}
@@ -330,30 +401,49 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Second image strip — open ocean ── */}
+      {/* ─── OCEAN IMAGE STRIP ─── */}
       <section
         className="relative overflow-hidden"
-        style={{ height: 'clamp(260px, 38vh, 480px)' }}
+        style={{ height: 'clamp(280px, 40vh, 520px)' }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=1800&q=85&fit=crop"
-          alt="Open ocean waves"
-          className="w-full h-full object-cover object-center"
+          alt="Open ocean — international maritime pressure"
+          className="h-full w-full object-cover object-center"
+          style={{ filter: 'brightness(0.55) saturate(0.7)' }}
         />
-        <div className="absolute inset-0 bg-[#0c0c0c]/55" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(to bottom, var(--bg) 0%, transparent 20%, transparent 80%, var(--bg) 100%)',
+          }}
+        />
         <div className="absolute inset-0 flex items-center justify-center px-8">
           <p
-            className="text-[#f0ede8]/8 font-medium tracking-[0.08em] text-center select-none"
+            className="select-none text-center font-light italic leading-tight"
             style={{
-              fontFamily: 'var(--font-playfair)',
-              fontSize: 'clamp(1.8rem, 5.5vw, 4.5rem)',
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(1.6rem, 5vw, 4rem)',
+              color: 'rgba(220,228,238,0.06)',
+              letterSpacing: '0.04em',
             }}
           >
             precedent · pressure · consequence
           </p>
         </div>
+        <div
+          className="absolute bottom-5 left-0 right-0 flex justify-center"
+        >
+          <p
+            className="text-[8px] uppercase tracking-[0.3em]"
+            style={{ fontFamily: 'var(--font-mono)', color: 'rgba(220,228,238,0.18)' }}
+          >
+            North Atlantic · International Waters
+          </p>
+        </div>
       </section>
+
     </div>
   )
 }

@@ -3,76 +3,98 @@
 @tailwind utilities;
 
 :root {
-  --bg-dark: #0c0c0c;
-  --bg-light: #f0ede8;
-  --bg-mid: #141414;
-  --text-dark: #0c0c0c;
-  --text-light: #f0ede8;
-  --text-muted-dark: #555;
-  --text-muted-light: #8a857e;
-  --accent-blue: #8ba7c7;
-  --accent-gold: #c4a46b;
-  --border-dark: #1f1f1f;
-  --border-light: #ddd8d0;
+  --bg: #06090f;
+  --bg-panel: #0b0f19;
+  --text: #dce4ee;
+  --text-dim: #3d5166;
+  --text-muted: #1e2c3a;
+  --accent: #5b8fa8;
+  --accent-dim: #2a4a5e;
+  --border: #111d28;
 }
 
 * {
   box-sizing: border-box;
 }
 
-body {
-  background: var(--bg-dark);
-  color: var(--text-light);
+html {
+  scroll-behavior: smooth;
 }
 
-/* Scrollbar */
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+::selection {
+  background: #5b8fa840;
+  color: #dce4ee;
+}
+
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #111;
+  background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 3px;
+  background: #1e2c3a;
+  border-radius: 2px;
 }
 
-/* Animations */
-@keyframes fadeInUp {
+/* ── Animations ── */
+@keyframes revealUp {
   from {
     opacity: 0;
-    transform: translateY(28px);
+    transform: translateY(32px);
+    clip-path: inset(0 0 100% 0);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+    clip-path: inset(0 0 0% 0);
   }
 }
 
 @keyframes fadeIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
-.animate-fade-in-up {
-  animation: fadeInUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(1.04); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
-.animate-fade-in {
+.anim-reveal {
+  animation: revealUp 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.anim-fade {
   animation: fadeIn 1.2s ease both;
 }
 
-.animate-slide-in-left {
-  animation: slideInLeft 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+.anim-slide {
+  animation: slideRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.anim-scale {
+  animation: scaleIn 1.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Grain overlay ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  opacity: 0.025;
+  pointer-events: none;
+  z-index: 9999;
 }
