@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ScoredEpisode } from '@/lib/db/episodes'
 import { ForecastResult } from '@/lib/agent/forecast'
@@ -16,134 +16,255 @@ interface ResultData {
   }
 }
 
-function ProbBar({
-  label,
-  value,
-  color,
+/* ─── Scroll reveal ─── */
+function useScrollReveal() {
+  useEffect(() => {
+    const els = document.querySelectorAll('[data-r]')
+    const obs = new IntersectionObserver(
+      entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('vis') }),
+      { threshold: 0.08 }
+    )
+    els.forEach(el => obs.observe(el))
+    return () => obs.disconnect()
+  }, [])
+}
+
+/* ─── Animated counter ─── */
+function AnimatedNumber({ target, suffix = '' }: { target: number; suffix?: string }) {
+  const [display, setDisplay] = useState(0)
+  const ref = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      obs.disconnect()
+      let start = 0
+      const duration = 900
+      const step = performance.now()
+      const tick = (now: number) => {
+        const progress = Math.min((now - step) / duration, 1)
+        const eased = 1 - Math.pow(1 - progress, 3)
+        setDisplay(Math.round(eased * target))
+        if (progress < 1) requestAnimationFrame(tick)
+      }
+      requestAnimationFrame(tick)
+    }, { threshold: 0.5 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [target])
+
+  return <span ref={ref}>{display}{suffix}</span>
+}
+
+/* ─── Scenario probability row ─── */
+function ScenarioRow({
+  label, sublabel, value, accentColor,
 }: {
-  label: string
-  value: number
-  color: string
+  label: string; sublabel: string; value: number; accentColor: string
 }) {
   const pct = Math.round(value * 100)
+  const barRef = useRef<HTMLDivElement>(null)
+  const [animated, setAnimated] = useState(false)
+
+  useEffect(() => {
+    const el = barRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setAnimated(true); obs.disconnect() }
+    }, { threshold: 0.5 })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
   return (
-    <div>
-      <div className="flex justify-between text-xs mb-1.5">
-        <span className="text-[#888]">{label}</span>
-        <span className="text-[#bbb] font-mono">{pct}%</span>
+    <div className="flex items-center gap-6 py-4" style={{ borderBottom: '1px solid var(--bd)' }}>
+      <div className="w-16 shrink-0 text-right">
+        <span
+          className="text-[2rem] font-bold leading-none tabular-nums"
+          style={{ color: accentColor, fontFamily: 'var(--font-mono)' }}
+        >
+          {pct}%
+        </span>
       </div>
-      <div className="h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full ${color} transition-all`}
-          style={{ width: `${pct}%` }}
-        />
+      <div className="flex-1">
+        <div className="flex items-baseline gap-2 mb-2">
+          <span className="text-[13px] font-semibold" style={{ color: 'var(--t1)' }}>{label}</span>
+          <span className="text-[11px]" style={{ color: 'var(--t3)', fontFamily: 'var(--font-mono)' }}>{sublabel}</span>
+        </div>
+        <div ref={barRef} className="h-[3px] w-full rounded-full overflow-hidden" style={{ background: 'var(--bd2)' }}>
+          <div
+            className="h-full rounded-full transition-all duration-[1200ms] ease-out"
+            style={{ width: animated ? `${pct}%` : '0%', background: accentColor }}
+          />
+        </div>
       </div>
     </div>
   )
 }
 
-function RiskGauge({ label, value }: { label: string; value: number }) {
-  const pct = Math.round(value * 100)
-  const color =
-    value > 0.65 ? 'text-red-400' : value > 0.40 ? 'text-amber-400' : 'text-green-400'
-  const ring =
-    value > 0.65 ? 'border-red-900/50' : value > 0.40 ? 'border-amber-900/50' : 'border-green-900/50'
-
+/* ─── Metric tile ─── */
+function MetricTile({ label, value, unit, color }: {
+  label: string; value: number | string; unit?: string; color?: string
+}) {
+  const numVal = typeof value === 'number' ? Math.round(value) : null
   return (
-    <div className={`border ${ring} rounded-lg p-4 bg-[#0f0f0f] text-center`}>
-      <div className={`text-2xl font-mono font-semibold ${color}`}>{pct}%</div>
-      <div className="text-xs text-[#555] mt-1">{label}</div>
+    <div className="py-6 px-5" style={{ borderLeft: '1px solid var(--bd2)' }}>
+      <div
+        className="text-[2.2rem] font-bold leading-none tabular-nums mb-2"
+        style={{ color: color ?? 'var(--t1)', fontFamily: 'var(--font-mono)' }}
+      >
+        {numVal !== null
+          ? <AnimatedNumber target={numVal} suffix={unit ?? ''} />
+          : <span>{value}{unit}</span>}
+      </div>
+      <p
+        className="text-[9.5px] uppercase tracking-[0.2em] leading-snug"
+        style={{ color: 'var(--t3)', fontFamily: 'var(--font-mono)' }}
+      >
+        {label}
+      </p>
     </div>
   )
 }
 
-function EpisodeCard({ ep, index }: { ep: ScoredEpisode; index: number }) {
-  const score = Math.round(ep.success_score ?? 0 * 100)
+/* ─── Episode row ─── */
+function EpisodeRow({ ep, index }: { ep: ScoredEpisode; index: number }) {
+  const success = ep.success_score ?? 0
   const successColor =
-    (ep.success_score ?? 0) > 0.6
-      ? 'text-green-400'
-      : (ep.success_score ?? 0) > 0.3
-      ? 'text-amber-400'
-      : 'text-red-400'
+    success > 0.6 ? '#5a8a6a' : success > 0.3 ? '#9a7a3a' : '#b05a5a'
 
   return (
-    <div className="border border-[#1f1f1f] rounded-lg p-5 bg-[#0d0d0d] hover:border-[#2a2a2a] transition-colors">
-      <div className="flex items-start justify-between gap-4 mb-3">
-        <div>
-          <span className="text-xs text-[#444] font-mono mr-2">#{index + 1}</span>
-          <span className="text-xs font-mono text-[#555] bg-[#151515] px-2 py-0.5 rounded">
-            {ep.episode_id}
+    <div
+      className="group py-6"
+      style={{ borderBottom: '1px solid var(--bd)' }}
+      data-r
+      data-d={String(index + 1)}
+    >
+      <div className="flex items-start justify-between gap-8">
+        {/* Left: meta */}
+        <div className="flex items-start gap-4 min-w-0">
+          <span
+            className="text-[11px] tabular-nums mt-0.5 shrink-0"
+            style={{ fontFamily: 'var(--font-mono)', color: 'var(--t4)' }}
+          >
+            {String(index + 1).padStart(2, '0')}
           </span>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <span
+                className="text-[10px] px-2 py-0.5 rounded-sm"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--t3)',
+                  background: 'var(--bd2)',
+                }}
+              >
+                {ep.episode_id}
+              </span>
+              <span
+                className="text-[10px] uppercase tracking-[0.15em]"
+                style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}
+              >
+                {ep.start_date.slice(0, 4)}{ep.end_date ? `–${ep.end_date.slice(0, 4)}` : '–ongoing'}
+              </span>
+            </div>
+
+            <h3
+              className="text-[15px] font-semibold mb-3 leading-snug"
+              style={{ color: 'var(--t1)' }}
+            >
+              {ep.name}
+            </h3>
+
+            <div
+              className="flex flex-wrap gap-x-5 gap-y-1 text-[11px] mb-3"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}
+            >
+              <span>Target: <span style={{ color: 'var(--t2)' }}>{ep.target}</span></span>
+              <span>{ep.multilateral ? 'Multilateral' : 'Unilateral'}</span>
+              <span className="capitalize">{ep.enforcement_intensity} intensity</span>
+              <span>Outcome: <span style={{ color: 'var(--t2)' }}>{ep.outcome ?? 'ongoing'}</span></span>
+              <span>Match: <span style={{ color: 'var(--t2)' }}>{Math.round(ep.combined_score * 100)}%</span></span>
+            </div>
+
+            {ep.workarounds.length > 0 && (
+              <div>
+                <p
+                  className="text-[9px] uppercase tracking-[0.22em] mb-1.5"
+                  style={{ fontFamily: 'var(--font-mono)', color: 'var(--t4)' }}
+                >
+                  Evasion methods
+                </p>
+                <div className="space-y-0.5">
+                  {ep.workarounds.slice(0, 2).map((w, i) => (
+                    <p key={i} className="text-[12.5px] leading-relaxed" style={{ color: 'var(--t3)' }}>
+                      <span style={{ color: 'var(--t4)', marginRight: '0.5rem' }}>—</span>
+                      {w.slice(0, 130)}{w.length > 130 ? '…' : ''}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        <span className={`text-xs font-mono ${successColor}`}>
-          {Math.round((ep.success_score ?? 0) * 100)}/100
-        </span>
-      </div>
 
-      <h3 className="text-sm font-medium text-[#ddd] mb-2">{ep.name}</h3>
-
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-[#666] mb-3">
-        <span>Target: <span className="text-[#888]">{ep.target}</span></span>
-        <span>
-          {ep.start_date.slice(0, 4)}–{ep.end_date ? ep.end_date.slice(0, 4) : 'ongoing'}
-        </span>
-        <span>
-          {ep.multilateral ? 'Multilateral' : 'Unilateral'} ·{' '}
-          <span className="capitalize">{ep.enforcement_intensity}</span>
-        </span>
-        <span>Outcome: <span className="text-[#888]">{ep.outcome ?? 'ongoing'}</span></span>
-      </div>
-
-      {ep.workarounds.length > 0 && (
-        <div className="mt-3">
-          <p className="text-xs text-[#444] uppercase tracking-wider mb-1.5">Top evasion methods</p>
-          <ul className="space-y-1">
-            {ep.workarounds.slice(0, 2).map((w, i) => (
-              <li key={i} className="text-xs text-[#555] flex gap-2">
-                <span className="text-[#333] mt-0.5 shrink-0">—</span>
-                <span>{w.slice(0, 120)}{w.length > 120 ? '…' : ''}</span>
-              </li>
-            ))}
-          </ul>
+        {/* Right: success score */}
+        <div className="shrink-0 text-right">
+          <div
+            className="text-[1.6rem] font-bold tabular-nums leading-none"
+            style={{ color: successColor, fontFamily: 'var(--font-mono)' }}
+          >
+            {Math.round(success * 100)}
+          </div>
+          <p
+            className="text-[8.5px] uppercase tracking-[0.18em] mt-1"
+            style={{ fontFamily: 'var(--font-mono)', color: 'var(--t4)' }}
+          >
+            success
+          </p>
         </div>
-      )}
-
-      <div className="mt-3 flex items-center gap-2">
-        <span className="text-xs text-[#444]">Match score:</span>
-        <span className="text-xs font-mono text-[#666]">
-          {Math.round(ep.combined_score * 100)}%
-        </span>
       </div>
     </div>
   )
 }
 
+/* ─── Analytical memo renderer ─── */
 function Memo({ text }: { text: string }) {
-  // Convert markdown headers and bold to styled HTML
   const lines = text.split('\n')
   return (
-    <div className="space-y-3 text-sm text-[#bbb] leading-relaxed">
+    <div className="space-y-2">
       {lines.map((line, i) => {
         if (line.startsWith('## ')) {
           return (
-            <h3 key={i} className="text-[#e5e5e5] font-semibold text-sm mt-5 mb-2 first:mt-0">
+            <h3
+              key={i}
+              className="text-[11px] uppercase tracking-[0.26em] pt-6 pb-1 first:pt-0"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)', borderBottom: '1px solid var(--wbd)' }}
+            >
               {line.slice(3)}
             </h3>
           )
         }
         if (line.startsWith('- ') || line.startsWith('* ')) {
           return (
-            <div key={i} className="flex gap-2 text-[#999]">
-              <span className="text-[#444] shrink-0 mt-0.5">—</span>
-              <span dangerouslySetInnerHTML={{ __html: boldify(line.slice(2)) }} />
+            <div key={i} className="flex gap-3 py-0.5">
+              <span className="shrink-0 mt-1 text-[10px]" style={{ color: 'var(--w3)' }}>—</span>
+              <p
+                className="text-[14px] leading-[1.8]"
+                style={{ color: 'var(--w2)' }}
+                dangerouslySetInnerHTML={{ __html: boldify(line.slice(2)) }}
+              />
             </div>
           )
         }
-        if (line.trim() === '') return <div key={i} className="h-1" />
+        if (line.trim() === '') return <div key={i} className="h-2" />
         return (
           <p
             key={i}
-            className="text-[#999]"
+            className="text-[14px] leading-[1.85]"
+            style={{ color: 'var(--w2)' }}
             dangerouslySetInnerHTML={{ __html: boldify(line) }}
           />
         )
@@ -153,24 +274,41 @@ function Memo({ text }: { text: string }) {
 }
 
 function boldify(text: string): string {
-  return text.replace(/\*\*(.+?)\*\*/g, '<strong class="text-[#ccc]">$1</strong>')
+  return text.replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--w1);font-weight:600">$1</strong>')
 }
 
+/* ─── Section label ─── */
+function SectionLabel({ n, children }: { n: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-4 mb-8" data-r data-d="1">
+      <span
+        className="text-[9.5px] uppercase tracking-[0.3em]"
+        style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}
+      >
+        {n} /
+      </span>
+      <span
+        className="text-[9.5px] uppercase tracking-[0.3em]"
+        style={{ fontFamily: 'var(--font-mono)', color: 'var(--t2)' }}
+      >
+        {children}
+      </span>
+      <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, var(--bd2), transparent)' }} />
+    </div>
+  )
+}
+
+/* ─── Page ─── */
 export default function ResultsPage() {
   const router = useRouter()
   const [result, setResult] = useState<ResultData | null>(null)
 
+  useScrollReveal()
+
   useEffect(() => {
     const stored = sessionStorage.getItem('sanctions_result')
-    if (!stored) {
-      router.push('/')
-      return
-    }
-    try {
-      setResult(JSON.parse(stored))
-    } catch {
-      router.push('/')
-    }
+    if (!stored) { router.push('/'); return }
+    try { setResult(JSON.parse(stored)) } catch { router.push('/') }
   }, [router])
 
   if (!result) return null
@@ -178,101 +316,150 @@ export default function ResultsPage() {
   const { query, data } = result
   const { episodes, forecast, narrative } = data
 
+  const fatigueColor = forecast.initiator_fatigue_score > 0.65 ? '#b05a5a'
+    : forecast.initiator_fatigue_score > 0.4 ? '#9a7a3a' : '#5a8a6a'
+  const workaroundColor = forecast.workaround_risk > 0.65 ? '#b05a5a'
+    : forecast.workaround_risk > 0.4 ? '#9a7a3a' : '#5a8a6a'
+
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
+    <div>
 
-      {/* Disclaimer */}
-      <div className="border-l-2 border-[#2a3a4a] pl-4 py-1">
-        <p className="text-xs text-[#555] leading-relaxed">
-          This analysis is generated from historical sanctions precedents and statistical models.
-          It is <strong className="text-[#666]">not legal, compliance, financial, or policy advice</strong>.
-          Do not rely on it as the sole basis for any decision.{' '}
-          <a href="/terms" className="underline hover:text-[#888] transition-colors">Terms of Use</a>
-        </p>
-      </div>
+      {/* ══ QUERY HERO ══ */}
+      <section
+        className="relative overflow-hidden px-8 py-16 lg:px-16"
+        style={{ borderBottom: '1px solid var(--bd2)' }}
+      >
+        {/* Ghost watermark */}
+        <span
+          className="pointer-events-none absolute -top-4 right-8 select-none font-bold leading-none"
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontSize: 'clamp(8rem, 20vw, 16rem)',
+            color: 'rgba(107,163,192,0.03)',
+          }}
+        >
+          ¶
+        </span>
 
-      {/* Query header */}
-      <div className="flex items-start justify-between gap-6">
-        <div>
-          <p className="text-xs text-[#555] uppercase tracking-wider mb-2">Query</p>
-          <p className="text-[#ccc] text-base">{query}</p>
-        </div>
-        <div className="flex gap-2 shrink-0">
-          <button
-            onClick={() => window.print()}
-            className="text-xs text-[#555] hover:text-[#888] border border-[#222] hover:border-[#333] rounded px-3 py-1.5 transition-colors"
+        <div className="relative max-w-4xl">
+          <p
+            className="mb-5 text-[9.5px] uppercase tracking-[0.3em] a-fade"
+            style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)', animationDelay: '0s' }}
           >
-            Export PDF
-          </button>
-          <button
-            onClick={() => router.push('/')}
-            className="text-xs text-[#555] hover:text-[#888] border border-[#222] hover:border-[#333] rounded px-3 py-1.5 transition-colors"
+            Scenario Analysis · {Math.round(forecast.confidence * 100)}% confidence · {episodes.length} precedents
+          </p>
+
+          <h1
+            className="mb-8 font-bold leading-[1.05] tracking-tight a-up"
+            style={{
+              fontSize: 'clamp(1.6rem, 3.5vw, 2.8rem)',
+              color: 'var(--t1)',
+              animationDelay: '0.1s',
+            }}
           >
-            New query
-          </button>
+            {query}
+          </h1>
+
+          <div className="flex items-center gap-3 a-up" style={{ animationDelay: '0.2s' }}>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-2 rounded-full border px-4 py-2 text-[10px] uppercase tracking-[0.2em] transition-all hover:opacity-70"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--t2)',
+                borderColor: 'var(--bd2)',
+                background: 'var(--bg2)',
+              }}
+            >
+              Export PDF
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className="flex items-center gap-2 rounded-full border px-4 py-2 text-[10px] uppercase tracking-[0.2em] transition-all hover:opacity-70"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                color: 'var(--t3)',
+                borderColor: 'var(--bd)',
+                background: 'transparent',
+              }}
+            >
+              ← New query
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* Forecast panel */}
-      <section>
-        <h2 className="text-xs text-[#555] uppercase tracking-wider mb-4">
-          Scenario forecast
-          <span className="ml-2 text-[#333]">
-            ({Math.round(forecast.confidence * 100)}% confidence · {episodes.length} precedents)
-          </span>
-        </h2>
+      {/* ══ FORECAST ══ */}
+      <section className="relative overflow-hidden px-8 py-16 lg:px-16">
+        <span
+          className="pointer-events-none absolute -top-6 left-4 select-none font-bold leading-none"
+          style={{ fontFamily: 'var(--font-sans)', fontSize: 'clamp(10rem,25vw,20rem)', color: 'rgba(107,163,192,0.025)' }}
+        >
+          01
+        </span>
 
-        <div className="border border-[#1f1f1f] rounded-lg p-6 bg-[#0d0d0d]">
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div className="space-y-4">
-              <ProbBar
-                label="Base — status quo / stalemate"
-                value={forecast.scenario_probs.base}
-                color="bg-[#555]"
-              />
-              <ProbBar
-                label="Hawkish — escalation"
-                value={forecast.scenario_probs.hawkish}
-                color="bg-red-800"
-              />
-              <ProbBar
-                label="Dove — compliance / negotiated relief"
-                value={forecast.scenario_probs.dove}
-                color="bg-green-900"
-              />
-              <ProbBar
-                label="Backfire — counterproductive"
-                value={forecast.scenario_probs.backfire}
-                color="bg-amber-900"
-              />
-            </div>
+        <div className="relative max-w-4xl">
+          <SectionLabel n="01">Scenario Forecast</SectionLabel>
 
-            <div className="grid grid-cols-2 gap-3 content-start">
-              <RiskGauge label="Initiator fatigue risk" value={forecast.initiator_fatigue_score} />
-              <RiskGauge label="Target workaround risk" value={forecast.workaround_risk} />
-              <div className="border border-[#1f1f1f] rounded-lg p-4 bg-[#0f0f0f] text-center">
-                <div className="text-2xl font-mono font-semibold text-[#bbb]">
-                  {Math.round(forecast.expected_success_score * 100)}
-                </div>
-                <div className="text-xs text-[#555] mt-1">Expected success (0–100)</div>
-              </div>
-              <div className="border border-[#1f1f1f] rounded-lg p-4 bg-[#0f0f0f] text-center">
-                <div className="text-2xl font-mono font-semibold text-[#bbb]">
-                  {forecast.time_to_impact_est_months ?? '?'}
-                </div>
-                <div className="text-xs text-[#555] mt-1">Months to economic impact</div>
-              </div>
-            </div>
+          {/* Scenario probability rows */}
+          <div className="mb-12" data-r data-d="2">
+            <ScenarioRow label="Base" sublabel="status quo / stalemate" value={forecast.scenario_probs.base} accentColor="var(--t3)" />
+            <ScenarioRow label="Hawkish" sublabel="escalation / pressure increase" value={forecast.scenario_probs.hawkish} accentColor="#b05a5a" />
+            <ScenarioRow label="Dove" sublabel="compliance / negotiated relief" value={forecast.scenario_probs.dove} accentColor="#5a8a6a" />
+            <ScenarioRow label="Backfire" sublabel="counterproductive / regime hardening" value={forecast.scenario_probs.backfire} accentColor="#9a7a3a" />
           </div>
 
+          {/* Risk metrics row */}
+          <div
+            className="grid grid-cols-2 sm:grid-cols-4 mb-10"
+            style={{ borderTop: '1px solid var(--bd2)', borderRight: '1px solid var(--bd2)' }}
+            data-r data-d="3"
+          >
+            <MetricTile
+              label="Initiator fatigue risk"
+              value={Math.round(forecast.initiator_fatigue_score * 100)}
+              unit="%"
+              color={fatigueColor}
+            />
+            <MetricTile
+              label="Workaround risk"
+              value={Math.round(forecast.workaround_risk * 100)}
+              unit="%"
+              color={workaroundColor}
+            />
+            <MetricTile
+              label="Expected success"
+              value={Math.round(forecast.expected_success_score * 100)}
+              unit="/100"
+              color="var(--t2)"
+            />
+            <MetricTile
+              label="Months to economic impact"
+              value={forecast.time_to_impact_est_months ?? '—'}
+              color="var(--t2)"
+            />
+          </div>
+
+          {/* Wildcards */}
           {forecast.top_wildcards.length > 0 && (
-            <div className="border-t border-[#1a1a1a] pt-4">
-              <p className="text-xs text-[#444] uppercase tracking-wider mb-2">Wildcard risks</p>
+            <div data-r data-d="4">
+              <p
+                className="mb-3 text-[9.5px] uppercase tracking-[0.28em]"
+                style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}
+              >
+                Wildcard risks
+              </p>
               <div className="flex flex-wrap gap-2">
                 {forecast.top_wildcards.map((w, i) => (
                   <span
                     key={i}
-                    className="text-xs text-[#666] border border-[#222] rounded px-2 py-1 bg-[#0f0f0f]"
+                    className="rounded-sm px-3 py-1.5 text-[11px]"
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      color: 'var(--t2)',
+                      background: 'var(--bg2)',
+                      border: '1px solid var(--bd2)',
+                    }}
                   >
                     {w}
                   </span>
@@ -283,50 +470,138 @@ export default function ResultsPage() {
         </div>
       </section>
 
-      {/* Matched episodes */}
-      <section>
-        <h2 className="text-xs text-[#555] uppercase tracking-wider mb-4">
-          Top matched precedents ({episodes.length})
-        </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {episodes.map((ep, i) => (
-            <EpisodeCard key={ep.episode_id} ep={ep} index={i} />
-          ))}
-        </div>
-      </section>
+      {/* ══ PRECEDENTS ══ */}
+      <section
+        className="relative overflow-hidden px-8 py-16 lg:px-16"
+        style={{ borderTop: '1px solid var(--bd2)' }}
+      >
+        <span
+          className="pointer-events-none absolute -top-6 left-4 select-none font-bold leading-none"
+          style={{ fontFamily: 'var(--font-sans)', fontSize: 'clamp(10rem,25vw,20rem)', color: 'rgba(107,163,192,0.025)' }}
+        >
+          02
+        </span>
 
-      {/* Claude narrative */}
-      <section>
-        <h2 className="text-xs text-[#555] uppercase tracking-wider mb-4">
-          Analytical memo
-          <span className="ml-2 text-[#333]">({narrative.model})</span>
-        </h2>
-        <div className="border border-[#1f1f1f] rounded-lg p-6 bg-[#0d0d0d]">
-          <Memo text={narrative.memo} />
-        </div>
-        {narrative.episode_ids_cited.length > 0 && (
-          <p className="text-xs text-[#444] mt-3">
-            Episodes cited: {narrative.episode_ids_cited.join(', ')}
-          </p>
-        )}
-      </section>
-
-      {/* Top lessons */}
-      {forecast.top_lessons.length > 0 && (
-        <section>
-          <h2 className="text-xs text-[#555] uppercase tracking-wider mb-4">
-            Key lessons from precedents
-          </h2>
-          <div className="space-y-3">
-            {forecast.top_lessons.map((lesson, i) => (
-              <div key={i} className="flex gap-3 text-sm text-[#666]">
-                <span className="text-[#333] shrink-0 font-mono mt-0.5">{i + 1}.</span>
-                <span>{lesson}</span>
-              </div>
+        <div className="relative max-w-4xl">
+          <SectionLabel n="02">Matched Precedents ({episodes.length})</SectionLabel>
+          <div>
+            {episodes.map((ep, i) => (
+              <EpisodeRow key={ep.episode_id} ep={ep} index={i} />
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ ANALYTICAL MEMO — white section ══ */}
+      <section
+        className="relative overflow-hidden px-8 py-16 lg:px-16"
+        style={{ background: '#ffffff', color: 'var(--w1)', borderTop: '1px solid var(--wbd)' }}
+      >
+        <span
+          className="pointer-events-none absolute -top-6 left-4 select-none font-bold leading-none"
+          style={{ fontFamily: 'var(--font-sans)', fontSize: 'clamp(10rem,25vw,20rem)', color: 'rgba(0,0,0,0.03)' }}
+        >
+          03
+        </span>
+
+        <div className="relative max-w-3xl">
+          <div className="flex items-center gap-4 mb-8" data-r data-d="1">
+            <span
+              className="text-[9.5px] uppercase tracking-[0.3em]"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--w3)' }}
+            >
+              03 /
+            </span>
+            <span
+              className="text-[9.5px] uppercase tracking-[0.3em]"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--w2)' }}
+            >
+              Analytical Memo
+            </span>
+            <div className="h-px flex-1" style={{ background: 'linear-gradient(to right, var(--wbd), transparent)' }} />
+          </div>
+
+          <div data-r data-d="2">
+            <Memo text={narrative.memo} />
+          </div>
+
+          {narrative.episode_ids_cited.length > 0 && (
+            <p
+              className="mt-8 text-[10px] uppercase tracking-[0.2em]"
+              style={{ fontFamily: 'var(--font-mono)', color: 'var(--w3)' }}
+              data-r data-d="3"
+            >
+              Episodes cited: {narrative.episode_ids_cited.join(' · ')}
+            </p>
+          )}
+        </div>
+      </section>
+
+      {/* ══ LESSONS + DISCLAIMER ══ */}
+      {forecast.top_lessons.length > 0 && (
+        <section
+          className="relative overflow-hidden px-8 py-16 lg:px-16"
+          style={{ borderTop: '1px solid var(--bd2)' }}
+        >
+          <span
+            className="pointer-events-none absolute -top-6 left-4 select-none font-bold leading-none"
+            style={{ fontFamily: 'var(--font-sans)', fontSize: 'clamp(10rem,25vw,20rem)', color: 'rgba(107,163,192,0.025)' }}
+          >
+            04
+          </span>
+
+          <div className="relative max-w-4xl">
+            <SectionLabel n="04">Key Lessons from Precedents</SectionLabel>
+
+            <div className="space-y-0">
+              {forecast.top_lessons.map((lesson, i) => (
+                <div
+                  key={i}
+                  className="flex gap-6 py-5"
+                  style={{ borderBottom: '1px solid var(--bd)' }}
+                  data-r
+                  data-d={String(i + 2)}
+                >
+                  <span
+                    className="text-[11px] tabular-nums shrink-0 mt-0.5"
+                    style={{ fontFamily: 'var(--font-mono)', color: 'var(--t4)' }}
+                  >
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <p className="text-[14px] leading-[1.8]" style={{ color: 'var(--t2)' }}>
+                    {lesson}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}
+
+      {/* ══ DISCLAIMER ══ */}
+      <section
+        className="px-8 py-8 lg:px-16"
+        style={{ borderTop: '1px solid var(--bd)' }}
+      >
+        <div className="max-w-4xl">
+          <p
+            className="text-[11px] leading-relaxed"
+            style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}
+          >
+            This analysis is generated from historical sanctions precedents and statistical models.
+            It is not legal, compliance, financial, or policy advice.
+            Do not rely on it as the sole basis for any decision.{' '}
+            <a
+              href="/terms"
+              className="underline transition-opacity hover:opacity-60"
+              style={{ color: 'var(--t2)' }}
+            >
+              Terms of Use
+            </a>
+          </p>
+        </div>
+      </section>
+
     </div>
   )
 }
