@@ -1,0 +1,217 @@
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+export const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+export interface TargetEconomy {
+  gdp_change_pct: number | null
+  oil_export_change_pct: number | null
+  inflation_pct: number | null
+  currency_devaluation_pct: number | null
+  alternative_partners: string[]
+}
+
+export interface ScenarioOutcome {
+  label: string
+  probability: number
+}
+
+export interface Outcomes {
+  scenarios: ScenarioOutcome[]
+  gdp_impact_pct?: number
+  [key: string]: unknown
+}
+
+export interface Episode {
+  episode_id: string
+  name: string
+  start_date: string
+  end_date: string | null
+  initiators: string[]
+  target: string
+  target_gdp_pct_world: number | null
+  sector: string
+  goals: string[]
+  multilateral: boolean
+  un_backed: boolean
+  enforcement_intensity: 'low' | 'medium' | 'high' | 'critical'
+  measures: string[]
+  trigger_event: string | null
+  workarounds: string[]
+  target_economy: TargetEconomy | null
+  outcome: string | null
+  objective_achieved: 'yes' | 'partial' | 'no' | 'backfire' | null
+  outcomes_6mo: Outcomes | null
+  outcomes_12mo: Outcomes | null
+  success_score: number | null
+  time_to_impact_months: number | null
+  time_to_resolution_months: number | null
+  key_turning_points: string[]
+  resolution: string | null
+  lessons: string[]
+  tags: string[]
+  key_sources: string[]
+  wikipedia_url: string | null
+  narrative: string | null
+  embedding?: number[]
+  created_at: string
+}
+
+export interface EpisodeQuery {
+  multilateral?: boolean
+  sector?: string
+  enforcement_intensity?: 'low' | 'medium' | 'high' | 'critical'
+  initiators?: string[]
+  target_gdp_pct_world?: number
+  un_backed?: boolean
+  objective_achieved?: string
+}
+
+export interface ScoredEpisode extends Episode {
+  heuristic_score: number
+  semantic_score?: number
+  combined_score: number
+}
+
+/**
+ * Weighted heuristic scoring — pure math, no AI.
+ * Scores how similar a past episode is to a given query.
+ */
+export function scoreEpisodeSimilarity(
+  query: EpisodeQuery,
+  episode: Episode
+): number {
+  let score = 0
+
+  // multilateral match: +0.30
+  if (query.multilateral !== undefined) {
+    if (query.multilateral === episode.multilateral) {
+      score += 0.30
+    }
+  }
+
+  // sector overlap: +0.20
+  if (query.sector) {
+    const querySectors = query.sector.toLowerCase().split(/[_,\s]+/)
+    const episodeSectors = episode.sector.toLowerCase().split(/[_,\s]+/)
+    const overlap = querySectors.filter(s => episodeSectors.includes(s)).length
+    if (overlap > 0) {
+      score += 0.20 * Math.min(1, overlap / querySectors.length)
+    }
+  }
+
+  // enforcement_intensity match: +0.20
+  if (query.enforcement_intensity) {
+    const intensityRank = { low: 1, medium: 2, high: 3, critical: 4 }
+    const queryRank = intensityRank[query.enforcement_intensity]
+    const episodeRank = intensityRank[episode.enforcement_intensity]
+    const diff = Math.abs(queryRank - episodeRank)
+    score += 0.20 * Math.max(0, 1 - diff * 0.4)
+  }
+
+  // initiator overlap: +0.15
+  if (query.initiators && query.initiators.length > 0) {
+    const overlap = query.initiators.filter(i =>
+      episode.initiators.some(ei => ei.toLowerCase() === i.toLowerCase())
+    ).length
+    score += 0.15 * (overlap / Math.max(query.initiators.length, 1))
+  }
+
+  // GDP proximity: +0.15
+  if (query.target_gdp_pct_world !== undefined && episode.target_gdp_pct_world !== null) {
+    const diff = Math.abs(query.target_gdp_pct_world - episode.target_gdp_pct_world)
+    const maxGDP = 4
+    score += 0.15 * Math.max(0, 1 - diff / maxGDP)
+  }
+
+  return Math.min(1, score)
+}
+
+export async function getEpisodeById(episodeId: string): Promise<Episode | null> {
+  const { data, error } = await supabase
+    .from('episodes')
+    .select('*')
+    .eq('episode_id', episodeId)
+    .single()
+
+  if (error) {
+    console.error('getEpisodeById error:', error)
+    return null
+  }
+  return data as Episode
+}
+
+export async function filterEpisodes(filters: {
+  initiators?: string[]
+  target?: string
+  multilateral?: boolean
+  sector?: string
+  enforcement_intensity?: string
+  objective_achieved?: string
+  un_backed?: boolean
+  limit?: number
+}): Promise<Episode[]> {
+  let query = supabase.from('episodes').select('*')
+
+  if (filters.target) {
+    query = query.ilike('target', `%${filters.target}%`)
+  }
+  if (filters.multilateral !== undefined) {
+    query = query.eq('multilateral', filters.multilateral)
+  }
+  if (filters.un_backed !== undefined) {
+    query = query.eq('un_backed', filters.un_backed)
+  }
+  if (filters.enforcement_intensity) {
+    query = query.eq('enforcement_intensity', filters.enforcement_intensity)
+  }
+  if (filters.objective_achieved) {
+    query = query.eq('objective_achieved', filters.objective_achieved)
+  }
+  if (filters.initiators && filters.initiators.length > 0) {
+    query = query.overlaps('initiators', filters.initiators)
+  }
+  if (filters.limit) {
+    query = query.limit(filters.limit)
+  }
+
+  const { data, error } = await query
+  if (error) {
+    console.error('filterEpisodes error:', error)
+    return []
+  }
+  return (data ?? []) as Episode[]
+}
+
+export async function searchEpisodesSemantic(
+  embedding: number[],
+  limit = 10,
+  threshold = 0.0
+): Promise<(Episode & { similarity: number })[]> {
+  const { data, error } = await supabase.rpc('match_episodes', {
+    query_embedding: embedding,
+    match_count: limit,
+    match_threshold: threshold,
+  })
+
+  if (error) {
+    console.error('searchEpisodesSemantic error:', error)
+    return []
+  }
+  return (data ?? []) as (Episode & { similarity: number })[]
+}
+
+export async function getAllEpisodes(): Promise<Episode[]> {
+  const { data, error } = await supabase
+    .from('episodes')
+    .select('*')
+    .order('start_date', { ascending: false })
+
+  if (error) {
+    console.error('getAllEpisodes error:', error)
+    return []
+  }
+  return (data ?? []) as Episode[]
+}
