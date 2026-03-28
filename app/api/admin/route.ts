@@ -76,7 +76,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   // Approve: generate embedding, insert into episodes, remove from pending
-  const ep = pending.episode_data as Record<string, unknown>
+  const ep = (pending as unknown as { episode_data: Record<string, unknown> }).episode_data
 
   const embeddingText = buildEmbeddingText(ep)
   const embeddingRes = await openai.embeddings.create({
