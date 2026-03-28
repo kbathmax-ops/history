@@ -41,13 +41,13 @@ export default function SubscribeForm() {
 
   return (
     <form onSubmit={submit} className="flex items-end gap-5">
-      <div className="field-line">
+      <div className="field" style={{ borderBottomColor: 'var(--bd2)' }}>
         <input
           type="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
           placeholder="your@email.com"
-          className="w-52 border-0 bg-transparent px-0 py-1.5 text-[11px] focus:outline-none transition-colors"
+          className="w-48 border-0 bg-transparent px-0 py-1.5 text-[11px] focus:outline-none"
           style={{
             fontFamily: 'var(--font-mono)',
             color: 'var(--t1)',
@@ -58,16 +58,13 @@ export default function SubscribeForm() {
       <button
         type="submit"
         disabled={!email.trim() || status === 'loading'}
-        className="pb-1.5 text-[9px] uppercase tracking-[0.24em] transition-all hover:opacity-100 disabled:opacity-25"
+        className="pb-1.5 text-[9px] uppercase tracking-[0.24em] transition-opacity disabled:opacity-25 hover:opacity-80"
         style={{ fontFamily: 'var(--font-mono)', color: 'var(--t2)' }}
       >
         {status === 'loading' ? '…' : 'Subscribe'}
       </button>
       {status === 'error' && (
-        <p
-          className="text-[9px] uppercase tracking-wider"
-          style={{ fontFamily: 'var(--font-mono)', color: '#c08080' }}
-        >
+        <p className="text-[9px]" style={{ fontFamily: 'var(--font-mono)', color: '#c08080' }}>
           {msg}
         </p>
       )}
