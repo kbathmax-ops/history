@@ -3,7 +3,7 @@ import OpenAI from 'openai'
 import { supabase } from '@/lib/db/episodes'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+export const maxDuration = 10
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
