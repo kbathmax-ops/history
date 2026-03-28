@@ -29,26 +29,44 @@ export default function SubscribeForm() {
   }
 
   if (status === 'ok') {
-    return <p className="text-xs text-green-500">{msg}</p>
+    return (
+      <p
+        className="text-[10px] text-green-500/70 uppercase tracking-[0.2em]"
+        style={{ fontFamily: 'var(--font-mono)' }}
+      >
+        {msg}
+      </p>
+    )
   }
 
   return (
-    <form onSubmit={submit} className="flex gap-2">
-      <input
-        type="email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        placeholder="your@email.com"
-        className="bg-[#111] border border-[#222] rounded px-3 py-1.5 text-[#e5e5e5] placeholder-[#3a3a3a] focus:outline-none focus:border-[#444] text-xs w-52"
-      />
+    <form onSubmit={submit} className="flex items-end gap-4">
+      <div className="relative">
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="your@email.com"
+          className="bg-transparent border-0 border-b border-[#252525] focus:border-[#444] px-0 py-1.5 text-[#f0ede8] placeholder-[#2e2e2e] focus:outline-none text-[11px] w-52 transition-colors"
+          style={{ fontFamily: 'var(--font-mono)' }}
+        />
+      </div>
       <button
         type="submit"
         disabled={!email.trim() || status === 'loading'}
-        className="text-xs text-[#666] hover:text-[#999] border border-[#222] hover:border-[#333] rounded px-3 py-1.5 transition-colors disabled:opacity-40"
+        className="text-[10px] text-[#444] hover:text-[#888] transition-colors uppercase tracking-[0.2em] disabled:opacity-30 pb-1.5"
+        style={{ fontFamily: 'var(--font-mono)' }}
       >
         {status === 'loading' ? '…' : 'Subscribe'}
       </button>
-      {status === 'error' && <p className="text-xs text-red-400 self-center">{msg}</p>}
+      {status === 'error' && (
+        <p
+          className="text-[10px] text-red-400/70 uppercase tracking-wider"
+          style={{ fontFamily: 'var(--font-mono)' }}
+        >
+          {msg}
+        </p>
+      )}
     </form>
   )
 }

@@ -179,7 +179,7 @@ export default function ResultsPage() {
   const { episodes, forecast, narrative } = data
 
   return (
-    <div className="space-y-10">
+    <div className="max-w-5xl mx-auto px-6 py-10 space-y-10">
       {/* Query header */}
       <div className="flex items-start justify-between gap-6">
         <div>

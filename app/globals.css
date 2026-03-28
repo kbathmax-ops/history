@@ -3,8 +3,17 @@
 @tailwind utilities;
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #e5e5e5;
+  --bg-dark: #0c0c0c;
+  --bg-light: #f0ede8;
+  --bg-mid: #141414;
+  --text-dark: #0c0c0c;
+  --text-light: #f0ede8;
+  --text-muted-dark: #555;
+  --text-muted-light: #8a857e;
+  --accent-blue: #8ba7c7;
+  --accent-gold: #c4a46b;
+  --border-dark: #1f1f1f;
+  --border-light: #ddd8d0;
 }
 
 * {
@@ -12,8 +21,8 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg-dark);
+  color: var(--text-light);
 }
 
 /* Scrollbar */
@@ -26,4 +35,44 @@ body {
 ::-webkit-scrollbar-thumb {
   background: #333;
   border-radius: 3px;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 1.2s ease both;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
