@@ -73,6 +73,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               style={{ color: 'var(--t2)' }}
             >
               Sanctions Precedent
+              <span
+                className="ml-3 text-[10px] font-normal"
+                style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}
+              >
+                © {new Date().getFullYear()} All rights reserved.
+              </span>
             </p>
             <div className="flex items-center gap-6">
               <Link

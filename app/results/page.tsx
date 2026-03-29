@@ -16,9 +16,10 @@ interface ResultData {
   }
 }
 
-/* ─── Scroll reveal ─── */
-function useScrollReveal() {
+/* ─── Scroll reveal — re-runs after data loads ─── */
+function useScrollReveal(ready: boolean) {
   useEffect(() => {
+    if (!ready) return
     const els = document.querySelectorAll('[data-r]')
     const obs = new IntersectionObserver(
       entries => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('vis') }),
@@ -26,7 +27,7 @@ function useScrollReveal() {
     )
     els.forEach(el => obs.observe(el))
     return () => obs.disconnect()
-  }, [])
+  }, [ready])
 }
 
 /* ─── Animated counter ─── */
@@ -303,7 +304,7 @@ export default function ResultsPage() {
   const router = useRouter()
   const [result, setResult] = useState<ResultData | null>(null)
 
-  useScrollReveal()
+  useScrollReveal(!!result)
 
   useEffect(() => {
     const stored = sessionStorage.getItem('sanctions_result')
