@@ -405,50 +405,41 @@ export default function HomePage() {
       </section>
 
       {/* ════════════════════════════════════════
-          OCEAN STRIP — dark atmospheric
+          DATABASE STATS
       ════════════════════════════════════════ */}
       <section
-        className="relative overflow-hidden"
-        style={{ height: 'clamp(280px, 38vh, 500px)' }}
+        className="px-8 lg:px-16"
+        style={{ borderTop: '1px solid var(--bd2)' }}
       >
         <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: [
-              'linear-gradient(to bottom, var(--bg) 0%, rgba(6,11,18,0.2) 30%, rgba(6,11,18,0.2) 70%, var(--bg) 100%)',
-              'radial-gradient(ellipse at 60% 40%, rgba(15,50,85,0.5) 0%, transparent 65%)',
-              "url('https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=1800&q=80&fit=crop')",
-            ].join(', '),
-            backgroundSize: 'auto, auto, cover',
-            backgroundPosition: 'center, center, center',
-            backgroundColor: '#060d1a',
-            filter: 'saturate(0.6) brightness(0.7)',
-          }}
-        />
-        <div
-          className="relative z-10 flex h-full flex-col items-center justify-center px-8 text-center"
-          style={{ filter: 'saturate(1) brightness(1)' }}
+          className="grid grid-cols-2 sm:grid-cols-4"
+          style={{ borderRight: '1px solid var(--bd2)' }}
         >
-          <p
-            className="select-none leading-[1.1] tracking-tight"
-            style={{
-              fontSize: 'clamp(2rem, 5vw, 5rem)',
-              fontWeight: 700,
-              color: 'rgba(221,234,246,0.07)',
-            }}
-          >
-            precedent
-            <br />
-            <span style={{ fontWeight: 300 }}>pressure</span>
-            <br />
-            consequence
-          </p>
-          <p
-            className="mt-8 text-[8.5px] uppercase tracking-[0.32em]"
-            style={{ fontFamily: 'var(--font-mono)', color: 'rgba(141,182,204,0.32)' }}
-          >
-            North Atlantic · International Waters
-          </p>
+          {[
+            { value: '130+', label: 'Episodes indexed' },
+            { value: '1950–', label: 'Historical coverage' },
+            { value: '40+',  label: 'Countries targeted' },
+            { value: '7',    label: 'Sectors classified' },
+          ].map(({ value, label }) => (
+            <div
+              key={label}
+              className="group py-10 px-6"
+              style={{ borderLeft: '1px solid var(--bd2)' }}
+            >
+              <div
+                className="text-[2.8rem] font-bold leading-none tabular-nums mb-3 transition-colors"
+                style={{ color: 'var(--t2)', fontFamily: 'var(--font-mono)' }}
+              >
+                {value}
+              </div>
+              <p
+                className="text-[9.5px] uppercase tracking-[0.24em] leading-snug"
+                style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}
+              >
+                {label}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
