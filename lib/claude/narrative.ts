@@ -15,14 +15,20 @@ function buildPrompt(
 ): string {
   const episodeSummaries = episodes.map((ep, i) =>
     `[${i + 1}] ${ep.episode_id} — ${ep.name} (${ep.start_date.slice(0, 4)})\n` +
-    `  Target: ${ep.target} | Multilateral: ${ep.multilateral} | Intensity: ${ep.enforcement_intensity}\n` +
-    `  Outcome: ${ep.outcome ?? 'ongoing'} | Success score: ${ep.success_score ?? 'N/A'}\n` +
-    `  Time to impact: ${ep.time_to_impact_months ?? 'unknown'} months\n` +
-    `  Key lessons: ${ep.lessons.slice(0, 2).join(' | ')}\n` +
-    `  Workarounds: ${ep.workarounds.slice(0, 3).join('; ')}`
+    `  Initiators: ${ep.initiators.join(', ')} → Target: ${ep.target} | Multilateral: ${ep.multilateral} | UN-backed: ${ep.un_backed}\n` +
+    `  Sector: ${ep.sector} | Intensity: ${ep.enforcement_intensity}\n` +
+    `  Goals: ${ep.goals.slice(0, 3).join('; ')}\n` +
+    `  Measures: ${ep.measures.slice(0, 4).join('; ')}\n` +
+    `  Trigger: ${ep.trigger_event ?? 'not specified'}\n` +
+    `  Outcome: ${ep.outcome ?? 'ongoing'} | Objective achieved: ${ep.objective_achieved ?? 'N/A'} | Success score: ${ep.success_score ?? 'N/A'}\n` +
+    `  Time to impact: ${ep.time_to_impact_months ?? 'unknown'} months | Time to resolution: ${ep.time_to_resolution_months ?? 'ongoing'} months\n` +
+    `  Key turning points: ${ep.key_turning_points.slice(0, 3).join(' | ')}\n` +
+    `  Workarounds used: ${ep.workarounds.slice(0, 3).join('; ')}\n` +
+    `  Resolution: ${ep.resolution ?? 'unresolved'}\n` +
+    `  Lessons: ${ep.lessons.slice(0, 2).join(' | ')}`
   ).join('\n\n')
 
-  return `You are a sanctions analyst. Based on the following structured forecast data and historical precedents, write a concise analytical memo.
+  return `You are a senior sanctions analyst producing an operational intelligence memo. Based on the structured forecast and historical precedent data below, write a precise analytical memo that goes beyond broad observations to name specific mechanisms, actors, and turning points.
 
 USER QUERY: ${query}
 
@@ -42,13 +48,13 @@ ${episodeSummaries}
 
 INSTRUCTIONS (follow exactly):
 1. Write a memo with these four sections: ## Assessment, ## Scenario Analysis, ## Key Risks, ## Precedent Basis
-2. In ## Assessment: state the base scenario and expected success in 2-3 sentences. Use the exact percentages above.
-3. In ## Scenario Analysis: describe each scenario (base/hawkish/dove/backfire) in 1-2 sentences each. Reference specific episode IDs in brackets, e.g. [IRN2012_NUCLEAR].
-4. In ## Key Risks: list the top 3 risks. Include initiator fatigue and workaround risk using the exact scores above. Reference at least one episode per risk.
-5. In ## Precedent Basis: briefly explain which 2-3 episodes are most relevant and why, with episode IDs in brackets.
-6. Do NOT make absolute predictions. Use language like "historical precedent suggests", "based on comparable cases", "probability-weighted".
-7. Do NOT invent facts not present in the data above.
-8. Keep the total memo under 500 words.`
+2. In ## Assessment: give a 3-4 sentence operational verdict. State the base scenario probability, expected success score, and the single most important structural factor (e.g. third-party trade relationships, enforcement gaps, domestic political timeline) that will determine the outcome. Be specific — name countries, institutions, or mechanisms where the data supports it.
+3. In ## Scenario Analysis: for each of the four scenarios (base/hawkish/dove/backfire), write 2-3 sentences. For each scenario: (a) identify the specific trigger or condition that would cause it, (b) name the evasion route or compliance mechanism most likely to dominate, (c) cite the most analogous episode ID in brackets. Use confidence language: "high probability", "plausible if", "unlikely absent X".
+4. In ## Key Risks: list exactly 3 operational risks. Each risk must include: the mechanism (how it would unfold), a named historical analogue from the episodes above (with episode ID in brackets), and the specific indicator to watch. Use the exact initiator fatigue (${formatPercent(forecast.initiator_fatigue_score)}) and workaround risk (${formatPercent(forecast.workaround_risk)}) scores.
+5. In ## Precedent Basis: identify the 2-3 most structurally similar episodes. For each: explain the specific parallel (not just "similar target" — explain what structural feature matches), note what succeeded or failed, and extract the operative lesson for this scenario. Use episode IDs in brackets.
+6. Do NOT make absolute predictions. Use calibrated language: "historical precedent suggests", "comparable cases show", "probability-weighted outcome".
+7. Do NOT invent facts, countries, actors, or outcomes not present in the data above.
+8. Aim for 550-700 words. Prioritize operational specificity over length.`
 }
 
 export interface NarrativeResult {
@@ -66,7 +72,7 @@ export async function generateNarrative(
 
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 1024,
+    max_tokens: 1500,
     system:
       'You are a precise sanctions analyst. You write concise, evidence-based memos. ' +
       'You always cite historical episode IDs. You never make absolute predictions. ' +

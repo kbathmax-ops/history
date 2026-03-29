@@ -22,11 +22,11 @@ const INTENSITIES = [
 ]
 
 const EXAMPLE_QUERIES = [
-  'Unilateral US sanctions on a mid-size petrostate with Chinese economic ties',
-  'Multilateral tech export controls against a nuclear-armed state',
-  'Comprehensive EU and US sanctions targeting an authoritarian government after election fraud',
-  'Arms embargo on a country receiving Russian military support',
-  'SWIFT disconnection and energy sanctions on a major oil exporter',
+  'US and EU unilateral sanctions targeting Iran\'s energy sector — objective: nuclear programme rollback — complicating factor: Chinese oil purchases circumventing regime',
+  'Multilateral SWIFT exclusion and asset freezes on Russia following military invasion — objective: financial isolation — complicating factor: energy dependency among EU initiators',
+  'US secondary sanctions on North Korea\'s arms and technology exports — objective: WMD programme halt — complicating factor: Chinese border trade and front-company networks',
+  'Comprehensive EU and UK sanctions on Belarus following election fraud — objective: political concessions — complicating factor: Russian economic backstop limiting leverage',
+  'US sectoral sanctions on Venezuela\'s oil industry — objective: democratic transition — complicating factor: debt obligations to China and Russia insulating Maduro regime',
 ]
 
 const TICKER_ITEMS = [
@@ -272,7 +272,7 @@ export default function HomePage() {
                 <textarea
                   value={query}
                   onChange={e => setQuery(e.target.value)}
-                  placeholder="Target country, initiating parties, objectives, instruments…"
+                  placeholder="e.g. US and EU sanctions on Iran's energy sector — objective: nuclear programme rollback — initiators: US, EU — instruments: oil embargo, SWIFT exclusion — complicating factor: Chinese purchases"
                   rows={4}
                   maxLength={1000}
                   className="w-full resize-none border-0 bg-transparent px-0 py-3 text-[15px] leading-[1.85] focus:outline-none"

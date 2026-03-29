@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { retrieveRelevantEpisodes } from '@/lib/agent/retrieve'
 import { computeForecast } from '@/lib/agent/forecast'
 import { generateNarrative } from '@/lib/claude/narrative'
+import { needsResearch, researchEpisode } from '@/lib/agent/research'
 import { EpisodeQuery } from '@/lib/db/episodes'
 
 export const maxDuration = 60
@@ -23,16 +24,26 @@ export async function POST(req: NextRequest) {
     }
 
     // Step 1: Retrieve relevant episodes (semantic + heuristic scoring)
-    const retrieval = await retrieveRelevantEpisodes(query.trim(), filters, 5)
+    const retrieval = await retrieveRelevantEpisodes(query.trim(), filters, 7)
+
+    // Step 1b: Research fallback — if retrieval quality is too low, synthesize an episode
+    let episodes = retrieval.episodes
+    if (needsResearch(episodes)) {
+      const synthesized = await researchEpisode(query.trim())
+      if (synthesized) {
+        // Inject at front, cap total at 7
+        episodes = [synthesized, ...episodes].slice(0, 7)
+      }
+    }
 
     // Step 2: Compute forecast (pure math from historical outcomes)
-    const forecast = computeForecast(retrieval.episodes)
+    const forecast = computeForecast(episodes)
 
     // Step 3: Generate narrative (Claude, last step, narrative only)
-    const narrative = await generateNarrative(query.trim(), retrieval.episodes, forecast)
+    const narrative = await generateNarrative(query.trim(), episodes, forecast)
 
     return NextResponse.json({
-      episodes: retrieval.episodes,
+      episodes,
       query_filters: retrieval.query_filters,
       forecast,
       narrative,

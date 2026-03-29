@@ -135,6 +135,24 @@ function EpisodeRow({ ep, index }: { ep: ScoredEpisode; index: number }) {
   const success = ep.success_score ?? 0
   const successColor =
     success > 0.6 ? '#5a8a6a' : success > 0.3 ? '#9a7a3a' : '#b05a5a'
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+
+  async function handleSave() {
+    setSaveState('saving')
+    try {
+      const res = await fetch('/api/episodes/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ep),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Save failed')
+      setSaveState('saved')
+    } catch {
+      setSaveState('error')
+      setTimeout(() => setSaveState('idle'), 3000)
+    }
+  }
 
   return (
     <div
@@ -164,6 +182,32 @@ function EpisodeRow({ ep, index }: { ep: ScoredEpisode; index: number }) {
               >
                 {ep.episode_id}
               </span>
+              {ep.synthesized && saveState !== 'saved' && (
+                <span
+                  className="text-[9px] px-2 py-0.5 rounded-sm uppercase tracking-[0.18em]"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    color: '#9a7a3a',
+                    background: 'rgba(154,122,58,0.12)',
+                    border: '1px solid rgba(154,122,58,0.25)',
+                  }}
+                >
+                  Researched
+                </span>
+              )}
+              {saveState === 'saved' && (
+                <span
+                  className="text-[9px] px-2 py-0.5 rounded-sm uppercase tracking-[0.18em]"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    color: '#5a8a6a',
+                    background: 'rgba(90,138,106,0.12)',
+                    border: '1px solid rgba(90,138,106,0.25)',
+                  }}
+                >
+                  Saved
+                </span>
+              )}
               <span
                 className="text-[10px] uppercase tracking-[0.15em]"
                 style={{ fontFamily: 'var(--font-mono)', color: 'var(--t3)' }}
@@ -206,6 +250,24 @@ function EpisodeRow({ ep, index }: { ep: ScoredEpisode; index: number }) {
                     </p>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {ep.synthesized && saveState !== 'saved' && (
+              <div className="mt-4">
+                <button
+                  onClick={handleSave}
+                  disabled={saveState === 'saving'}
+                  className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-[9.5px] uppercase tracking-[0.2em] transition-all hover:opacity-70 disabled:opacity-40"
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    color: '#9a7a3a',
+                    borderColor: 'rgba(154,122,58,0.3)',
+                    background: 'rgba(154,122,58,0.06)',
+                  }}
+                >
+                  {saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Failed — retry' : '+ Save to database'}
+                </button>
               </div>
             )}
           </div>
