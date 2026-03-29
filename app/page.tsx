@@ -417,7 +417,7 @@ export default function HomePage() {
         >
           {[
             { value: '130+', label: 'Episodes indexed' },
-            { value: '1950–', label: 'Historical coverage' },
+            { value: '18mo',  label: 'Median time to impact' },
             { value: '40+',  label: 'Countries targeted' },
             { value: '7',    label: 'Sectors classified' },
           ].map(({ value, label }) => (
