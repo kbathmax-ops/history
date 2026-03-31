@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
-import { ScoredEpisode } from '@/lib/db/episodes'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { getSupabase, ScoredEpisode } from '@/lib/db/episodes'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
@@ -43,7 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check for duplicate
-    const { data: existing } = await supabase
+    const { data: existing } = await getSupabase()
       .from('episodes')
       .select('episode_id')
       .eq('episode_id', episode.episode_id)
@@ -95,7 +89,7 @@ export async function POST(req: NextRequest) {
       narrative: episode.narrative ?? null,
     }
 
-    const { error } = await supabase
+    const { error } = await getSupabase()
       .from('episodes')
       .insert({ ...dbEpisode, embedding })
 
