@@ -246,7 +246,7 @@ function EpisodeRow({ ep, index }: { ep: ScoredEpisode; index: number }) {
                   {ep.workarounds.slice(0, 2).map((w, i) => (
                     <p key={i} className="text-[12.5px] leading-relaxed" style={{ color: 'var(--t3)' }}>
                       <span style={{ color: 'var(--t4)', marginRight: '0.5rem' }}>—</span>
-                      {w.slice(0, 130)}{w.length > 130 ? '…' : ''}
+                      {w}
                     </p>
                   ))}
                 </div>
