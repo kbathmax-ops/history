@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { supabase } from '@/lib/db/episodes'
+import { getSupabase } from '@/lib/db/episodes'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('pending_cases')
     .select('id, query, created_at, episode_data')
     .order('created_at', { ascending: false })
@@ -59,7 +59,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   // Fetch the pending case
-  const { data: pending, error: fetchError } = await supabase
+  const { data: pending, error: fetchError } = await getSupabase()
     .from('pending_cases')
     .select('episode_data')
     .eq('id', id)
@@ -70,7 +70,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (action === 'reject') {
-    const { error: delError } = await supabase.from('pending_cases').delete().eq('id', id)
+    const { error: delError } = await getSupabase().from('pending_cases').delete().eq('id', id)
     if (delError) return NextResponse.json({ error: delError.message }, { status: 500 })
     return NextResponse.json({ message: 'Case rejected and removed' })
   }
@@ -85,7 +85,7 @@ export async function PATCH(req: NextRequest) {
   })
   const embedding = embeddingRes.data[0].embedding
 
-  const { error: insertError } = await supabase.from('episodes').insert({
+  const { error: insertError } = await getSupabase().from('episodes').insert({
     ...ep,
     embedding,
   })
@@ -95,7 +95,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: insertError.message }, { status: 500 })
   }
 
-  const { error: delError } = await supabase.from('pending_cases').delete().eq('id', id)
+  const { error: delError } = await getSupabase().from('pending_cases').delete().eq('id', id)
   if (delError) console.error('Failed to delete pending case:', delError)
 
   return NextResponse.json({ message: 'Case approved and added to episodes', episode_id: ep.episode_id })

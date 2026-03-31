@@ -1,11 +1,19 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing required env vars: NEXT_PUBLIC_SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY')
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _supabase: SupabaseClient<any> | null = null
+
+export function getSupabase() {
+  if (!_supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing required env vars: NEXT_PUBLIC_SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY')
+    }
+    _supabase = createClient(supabaseUrl, supabaseKey)
+  }
+  return _supabase
 }
-export const supabase = createClient(supabaseUrl, supabaseKey)
 
 export interface TargetEconomy {
   gdp_change_pct: number | null
@@ -133,7 +141,7 @@ export function scoreEpisodeSimilarity(
 }
 
 export async function getEpisodeById(episodeId: string): Promise<Episode | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('episodes')
     .select('*')
     .eq('episode_id', episodeId)
@@ -156,7 +164,7 @@ export async function filterEpisodes(filters: {
   un_backed?: boolean
   limit?: number
 }): Promise<Episode[]> {
-  let query = supabase.from('episodes').select('*')
+  let query = getSupabase().from('episodes').select('*')
 
   if (filters.target) {
     const escaped = filters.target.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
@@ -194,7 +202,7 @@ export async function searchEpisodesSemantic(
   limit = 10,
   threshold = 0.0
 ): Promise<(Episode & { similarity: number })[]> {
-  const { data, error } = await supabase.rpc('match_episodes', {
+  const { data, error } = await getSupabase().rpc('match_episodes', {
     query_embedding: embedding,
     match_count: limit,
     match_threshold: threshold,
@@ -208,7 +216,7 @@ export async function searchEpisodesSemantic(
 }
 
 export async function getAllEpisodes(): Promise<Episode[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('episodes')
     .select('*')
     .order('start_date', { ascending: false })

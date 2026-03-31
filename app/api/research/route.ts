@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { supabase } from '@/lib/db/episodes'
+import { getSupabase } from '@/lib/db/episodes'
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -120,7 +120,7 @@ Requirements:
     }
 
     // Store in pending_cases for admin review
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('pending_cases')
       .insert({ episode_data: episodeData, query: query.trim() })
       .select('id')
