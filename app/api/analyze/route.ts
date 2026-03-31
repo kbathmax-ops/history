@@ -49,9 +49,10 @@ export async function POST(req: NextRequest) {
       narrative,
     })
   } catch (err) {
-    console.error('/api/analyze error:', err)
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('/api/analyze error:', message, err)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: message || 'Internal server error' },
       { status: 500 }
     )
   }

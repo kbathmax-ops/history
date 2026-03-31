@@ -70,30 +70,39 @@ export async function generateNarrative(
 ): Promise<NarrativeResult> {
   const prompt = buildPrompt(query, episodes, forecast)
 
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1500,
-    system:
-      'You are a precise sanctions analyst. You write concise, evidence-based memos. ' +
-      'You always cite historical episode IDs. You never make absolute predictions. ' +
-      'You use only the data provided — never invent statistics or outcomes.',
-    messages: [{ role: 'user', content: prompt }],
-  })
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1500,
+      system:
+        'You are a precise sanctions analyst. You write concise, evidence-based memos. ' +
+        'You always cite historical episode IDs. You never make absolute predictions. ' +
+        'You use only the data provided — never invent statistics or outcomes.',
+      messages: [{ role: 'user', content: prompt }],
+    })
 
-  const memo =
-    message.content[0].type === 'text' ? message.content[0].text : ''
+    const memo =
+      message.content[0].type === 'text' ? message.content[0].text : ''
 
-  // Extract cited episode IDs from the memo
-  const episodeIdPattern = /\[((SYN_)?[A-Z]{2,4}\d{4}_[A-Z_]+)\]/g
-  const cited = new Set<string>()
-  let match: RegExpExecArray | null
-  while ((match = episodeIdPattern.exec(memo)) !== null) {
-    cited.add(match[1])
-  }
+    // Extract cited episode IDs from the memo
+    const episodeIdPattern = /\[((SYN_)?[A-Z]{2,4}\d{4}_[A-Z_]+)\]/g
+    const cited = new Set<string>()
+    let match: RegExpExecArray | null
+    while ((match = episodeIdPattern.exec(memo)) !== null) {
+      cited.add(match[1])
+    }
 
-  return {
-    memo,
-    model: 'claude-sonnet-4-6',
-    episode_ids_cited: Array.from(cited),
+    return {
+      memo,
+      model: 'claude-sonnet-4-6',
+      episode_ids_cited: Array.from(cited),
+    }
+  } catch (err) {
+    console.error('generateNarrative failed:', err)
+    return {
+      memo: '',
+      model: 'claude-sonnet-4-6',
+      episode_ids_cited: [],
+    }
   }
 }
