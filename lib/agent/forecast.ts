@@ -25,7 +25,7 @@ const DOVE_LABELS = new Set([
   'negotiated_ceasefire', 'negotiated_freeze', 'partial_compliance', 'ICC_accountability',
 ])
 const HAWK_LABELS = new Set([
-  'escalation', 'military_escalation', 'backfire',
+  'escalation', 'military_escalation',
 ])
 const BACKFIRE_LABELS = new Set(['backfire'])
 
@@ -111,14 +111,6 @@ function computeInitiatorFatigue(episodes: ScoredEpisode[]): number {
 
   if (episodes.length > 0) {
     fatigue += 0.15 * (multilateralLong / episodes.length)
-  }
-
-  // If all ongoing (null resolution) → low fatigue if multilateral
-  const allOngoing = resolutions.length === 0
-  if (allOngoing) {
-    const multilateralFraction =
-      episodes.filter(e => e.multilateral).length / Math.max(episodes.length, 1)
-    fatigue = 0.4 - multilateralFraction * 0.2
   }
 
   return Math.min(1, Math.max(0, fatigue))

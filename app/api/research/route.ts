@@ -5,7 +5,7 @@ import { supabase } from '@/lib/db/episodes'
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 10
+export const maxDuration = 60
 
 const SYSTEM_PROMPT = `You are a sanctions historian and analyst. Generate detailed, historically accurate sanctions episodes in structured JSON format. Be precise with dates, economic figures, and outcomes. Only generate episodes for real, documented historical events.`
 
@@ -64,7 +64,16 @@ const EPISODE_SCHEMA = `{
   "narrative": "2-3 paragraph analytical narrative summarising the episode"
 }`
 
+function checkAuth(req: NextRequest): boolean {
+  const secret = req.headers.get('x-admin-secret')
+  return !!process.env.ADMIN_SECRET && secret === process.env.ADMIN_SECRET
+}
+
 export async function POST(req: NextRequest) {
+  if (!checkAuth(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const { query } = await req.json()
 

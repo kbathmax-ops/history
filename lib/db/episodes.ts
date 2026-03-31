@@ -1,9 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://placeholder.supabase.co',
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'placeholder'
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing required env vars: NEXT_PUBLIC_SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY')
+}
+export const supabase = createClient(supabaseUrl, supabaseKey)
 
 export interface TargetEconomy {
   gdp_change_pct: number | null
@@ -157,7 +159,8 @@ export async function filterEpisodes(filters: {
   let query = supabase.from('episodes').select('*')
 
   if (filters.target) {
-    query = query.ilike('target', `%${filters.target}%`)
+    const escaped = filters.target.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
+    query = query.ilike('target', `%${escaped}%`)
   }
   if (filters.multilateral !== undefined) {
     query = query.eq('multilateral', filters.multilateral)

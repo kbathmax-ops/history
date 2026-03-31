@@ -11,6 +11,7 @@ const SECTORS = [
   { value: 'technology', label: 'Technology / Export controls' },
   { value: 'comprehensive', label: 'Comprehensive' },
   { value: 'trade', label: 'Trade' },
+  { value: 'energy_finance', label: 'Energy + Finance' },
 ]
 
 const INTENSITIES = [
@@ -126,6 +127,7 @@ export default function HomePage() {
 
       const data = json
       sessionStorage.setItem('sanctions_result', JSON.stringify({ query, data }))
+      setSubmitting(false)
       router.push('/results')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')

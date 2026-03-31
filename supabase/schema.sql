@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS episodes (
 CREATE INDEX IF NOT EXISTS episodes_embedding_idx
   ON episodes
   USING ivfflat (embedding vector_cosine_ops)
-  WITH (lists = 100);
+  WITH (lists = 10);
 
 -- Index on frequently filtered columns
 CREATE INDEX IF NOT EXISTS episodes_target_idx ON episodes (target);

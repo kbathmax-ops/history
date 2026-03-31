@@ -336,8 +336,17 @@ function Memo({ text }: { text: string }) {
   )
 }
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+}
+
 function boldify(text: string): string {
-  return text.replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--w1);font-weight:600">$1</strong>')
+  return escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--w1);font-weight:600">$1</strong>')
 }
 
 /* ─── Section label ─── */

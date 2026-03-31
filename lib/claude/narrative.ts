@@ -84,7 +84,7 @@ export async function generateNarrative(
     message.content[0].type === 'text' ? message.content[0].text : ''
 
   // Extract cited episode IDs from the memo
-  const episodeIdPattern = /\[([A-Z]{2,4}\d{4}_[A-Z_]+)\]/g
+  const episodeIdPattern = /\[((SYN_)?[A-Z]{2,4}\d{4}_[A-Z_]+)\]/g
   const cited = new Set<string>()
   let match: RegExpExecArray | null
   while ((match = episodeIdPattern.exec(memo)) !== null) {

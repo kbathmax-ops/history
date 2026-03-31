@@ -10,6 +10,11 @@ const supabase = createClient(
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
+function checkAuth(req: NextRequest): boolean {
+  const secret = req.headers.get('x-admin-secret')
+  return !!process.env.ADMIN_SECRET && secret === process.env.ADMIN_SECRET
+}
+
 function buildEmbeddingText(ep: Partial<ScoredEpisode>): string {
   const parts = [
     ep.name,
@@ -26,6 +31,10 @@ function buildEmbeddingText(ep: Partial<ScoredEpisode>): string {
 }
 
 export async function POST(req: NextRequest) {
+  if (!checkAuth(req)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const episode = await req.json() as ScoredEpisode
 
@@ -52,8 +61,39 @@ export async function POST(req: NextRequest) {
     })
     const embedding = embeddingRes.data[0].embedding
 
-    // Strip client-only scoring fields before insert
-    const { heuristic_score, semantic_score, combined_score, synthesized, ...dbEpisode } = episode
+    // Whitelist only known DB columns — never spread untrusted input directly
+    const dbEpisode = {
+      episode_id: episode.episode_id,
+      name: episode.name,
+      start_date: episode.start_date,
+      end_date: episode.end_date ?? null,
+      initiators: episode.initiators ?? [],
+      target: episode.target,
+      target_gdp_pct_world: episode.target_gdp_pct_world ?? null,
+      sector: episode.sector,
+      goals: episode.goals ?? [],
+      multilateral: episode.multilateral ?? false,
+      un_backed: episode.un_backed ?? false,
+      enforcement_intensity: episode.enforcement_intensity,
+      measures: episode.measures ?? [],
+      trigger_event: episode.trigger_event ?? null,
+      workarounds: episode.workarounds ?? [],
+      target_economy: episode.target_economy ?? null,
+      outcome: episode.outcome ?? null,
+      objective_achieved: episode.objective_achieved ?? null,
+      outcomes_6mo: episode.outcomes_6mo ?? null,
+      outcomes_12mo: episode.outcomes_12mo ?? null,
+      success_score: episode.success_score ?? null,
+      time_to_impact_months: episode.time_to_impact_months ?? null,
+      time_to_resolution_months: episode.time_to_resolution_months ?? null,
+      key_turning_points: episode.key_turning_points ?? [],
+      resolution: episode.resolution ?? null,
+      lessons: episode.lessons ?? [],
+      tags: episode.tags ?? [],
+      key_sources: episode.key_sources ?? [],
+      wikipedia_url: episode.wikipedia_url ?? null,
+      narrative: episode.narrative ?? null,
+    }
 
     const { error } = await supabase
       .from('episodes')

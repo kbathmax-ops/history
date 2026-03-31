@@ -49,7 +49,7 @@ const RESEARCH_TOOL: Anthropic.Tool = {
       target_gdp_pct_world: { type: ['number', 'null'] },
       sector: {
         type: 'string',
-        enum: ['energy', 'finance', 'defense_nuclear', 'technology', 'comprehensive', 'trade'],
+        enum: ['energy', 'finance', 'defense_nuclear', 'technology', 'comprehensive', 'trade', 'energy_finance'],
       },
       goals: { type: 'array', items: { type: 'string' } },
       multilateral: { type: 'boolean' },
