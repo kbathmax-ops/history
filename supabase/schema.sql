@@ -118,3 +118,18 @@ BEGIN
   LIMIT match_count;
 END;
 $$;
+
+-- Saved analyses — persistent, shareable results
+CREATE TABLE IF NOT EXISTS saved_analyses (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  query         TEXT NOT NULL,
+  query_filters JSONB DEFAULT '{}',
+  episodes      JSONB NOT NULL,
+  forecast      JSONB NOT NULL,
+  narrative     JSONB NOT NULL,
+  query_hash    TEXT,
+  created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index for cache lookups by hash
+CREATE INDEX IF NOT EXISTS saved_analyses_hash_idx ON saved_analyses (query_hash);

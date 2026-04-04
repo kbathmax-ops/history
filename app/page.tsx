@@ -88,6 +88,7 @@ export default function HomePage() {
   const [intensity, setIntensity] = useState('')
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [stepMessage, setStepMessage] = useState('')
   const [error, setError] = useState('')
 
   useScrollReveal()
@@ -102,33 +103,56 @@ export default function HomePage() {
     setLoading(true)
     setSubmitting(true)
     setError('')
+    setStepMessage('Connecting…')
+
     try {
       const filters: Record<string, unknown> = {}
       if (multilateral === 'true') filters.multilateral = true
       if (multilateral === 'false') filters.multilateral = false
       if (sector) filters.sector = sector
       if (intensity) filters.enforcement_intensity = intensity
+
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: query.trim(), filters }),
       })
 
-      let json: Record<string, unknown>
-      try {
-        json = await res.json()
-      } catch {
-        throw new Error('Server returned an unexpected response. Please try again.')
+      if (!res.ok || !res.body) {
+        let errMsg = 'Request failed'
+        try { const j = await res.json(); errMsg = (j.error as string) ?? errMsg } catch {}
+        throw new Error(errMsg)
       }
 
-      if (!res.ok) {
-        throw new Error((json.error as string) ?? 'Request failed')
-      }
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
 
-      const data = json
-      sessionStorage.setItem('sanctions_result', JSON.stringify({ query, data }))
-      setSubmitting(false)
-      router.push('/results')
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          let event: Record<string, unknown>
+          try { event = JSON.parse(line.slice(6)) } catch { continue }
+
+          if (event.type === 'step') {
+            setStepMessage(event.message as string)
+          } else if (event.type === 'complete') {
+            const { id, data } = event as { id: string; data: unknown }
+            sessionStorage.setItem(`sanctions_result_${id}`, JSON.stringify({ query, data }))
+            setSubmitting(false)
+            router.push(`/results/${id}`)
+            return
+          } else if (event.type === 'error') {
+            throw new Error((event.error as string) || 'Something went wrong')
+          }
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setSubmitting(false)
@@ -367,7 +391,7 @@ export default function HomePage() {
                   className="text-[11px] uppercase tracking-[0.24em] transition-colors group-enabled:group-hover:opacity-80"
                   style={{ fontFamily: 'var(--font-mono)', color: 'var(--w2)' }}
                 >
-                  {loading ? 'Analyzing precedents…' : 'Analyze scenario'}
+                  {loading ? (stepMessage || 'Analyzing precedents…') : 'Analyze scenario'}
                 </span>
               </button>
             </div>

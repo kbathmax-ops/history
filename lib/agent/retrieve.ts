@@ -1,7 +1,6 @@
 import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
 import {
-  Episode,
   EpisodeQuery,
   ScoredEpisode,
   searchEpisodesSemantic,
@@ -9,6 +8,7 @@ import {
   scoreEpisodeSimilarity,
 } from '@/lib/db/episodes'
 
+// OpenAI is kept only for text-embedding-3-small (no Anthropic embedding model available)
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -27,22 +27,21 @@ export async function generateEmbedding(text: string): Promise<number[]> {
  */
 async function generateHyDE(query: string): Promise<string> {
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+    const msg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 140,
-      temperature: 0.2,
       messages: [
         {
-          role: 'system',
+          role: 'user',
           content:
-            'You are a sanctions database. Given a scenario query, write a 2-sentence description of a real historical sanctions episode that is structurally analogous. ' +
+            'You are a sanctions database. Given a scenario query, write a 2-sentence description of a real historical sanctions episode that is structurally analogous.\n' +
             'Format: "[Initiators] imposed [specific measures] on [target] in [approximate year] following [trigger]. ' +
-            'The sanctions [outcome description], with [key dynamic or workaround] determining the result."',
+            'The sanctions [outcome description], with [key dynamic or workaround] determining the result."\n\n' +
+            `Query: ${query}`,
         },
-        { role: 'user', content: query },
       ],
     })
-    return response.choices[0].message.content ?? query
+    return msg.content[0].type === 'text' ? msg.content[0].text : query
   } catch {
     return query
   }
@@ -53,36 +52,87 @@ async function generateHyDE(query: string): Promise<string> {
  * Generates 3 structural variants of the query, each emphasizing a different
  * dimension: (1) the economic mechanism, (2) the geopolitical coalition structure,
  * (3) the target's evasion/workaround strategy.
- * Broader retrieval net catches episodes using different terminology for the
- * same underlying scenario type.
  */
 async function generateQueryVariants(query: string): Promise<string[]> {
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+    const msg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: 220,
-      temperature: 0.4,
       messages: [
         {
-          role: 'system',
+          role: 'user',
           content:
-            'Generate exactly 3 alternative phrasings of this sanctions scenario query. ' +
+            'Generate exactly 3 alternative phrasings of this sanctions scenario query.\n' +
             'Each must emphasize a different structural dimension:\n' +
             '1. The specific economic mechanism (oil embargo, SWIFT exclusion, asset freeze, export control)\n' +
             '2. The geopolitical coalition structure and third-party dynamics\n' +
-            '3. The target country\'s likely evasion or workaround strategy\n' +
-            'Return exactly 3 lines, no numbering, no bullets, no extra text.',
+            "3. The target country's likely evasion or workaround strategy\n" +
+            'Return exactly 3 lines, no numbering, no bullets, no extra text.\n\n' +
+            `Query: ${query}`,
         },
-        { role: 'user', content: query },
       ],
     })
-    return (response.choices[0].message.content ?? '')
+    return (msg.content[0].type === 'text' ? msg.content[0].text : '')
       .split('\n')
       .map(l => l.trim())
       .filter(l => l.length > 10)
       .slice(0, 3)
   } catch {
     return []
+  }
+}
+
+/**
+ * LLM-based structured filter extraction.
+ * Runs in parallel with generateQueryVariants — adds ~same latency as before
+ * but understands nuance that keyword matching misses (e.g. multi-sector queries,
+ * implied coalition structure, intensity inference from context).
+ * Falls back to empty filters on any error.
+ */
+async function parseQueryFilters(query: string): Promise<EpisodeQuery> {
+  try {
+    const msg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 150,
+      messages: [
+        {
+          role: 'user',
+          content:
+            'Extract structured filters from this sanctions scenario. Return ONLY a JSON object with these optional fields:\n' +
+            '- "multilateral": true or false (omit if genuinely ambiguous)\n' +
+            '- "sector": one of "energy","finance","defense_nuclear","technology","comprehensive","trade","energy_finance" (omit if mixed or unclear)\n' +
+            '- "enforcement_intensity": one of "low","medium","high","critical" (omit if unclear)\n' +
+            '- "initiators": array like ["US","EU","UN","UK"] (include only when explicitly named)\n\n' +
+            `Scenario: ${query}\n\nReturn only the JSON object.`,
+        },
+      ],
+    })
+
+    const text = msg.content[0].type === 'text' ? msg.content[0].text.trim() : '{}'
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return {}
+
+    const parsed = JSON.parse(jsonMatch[0])
+    const result: EpisodeQuery = {}
+
+    if (typeof parsed.multilateral === 'boolean') {
+      result.multilateral = parsed.multilateral
+    }
+    const validSectors = ['energy', 'finance', 'defense_nuclear', 'technology', 'comprehensive', 'trade', 'energy_finance']
+    if (typeof parsed.sector === 'string' && validSectors.includes(parsed.sector)) {
+      result.sector = parsed.sector
+    }
+    const validIntensities = ['low', 'medium', 'high', 'critical'] as const
+    if (typeof parsed.enforcement_intensity === 'string' && (validIntensities as readonly string[]).includes(parsed.enforcement_intensity)) {
+      result.enforcement_intensity = parsed.enforcement_intensity as typeof validIntensities[number]
+    }
+    if (Array.isArray(parsed.initiators)) {
+      result.initiators = parsed.initiators.filter((i: unknown): i is string => typeof i === 'string')
+    }
+
+    return result
+  } catch {
+    return {}
   }
 }
 
@@ -146,82 +196,8 @@ async function rerankWithClaude(
       .sort((a, b) => b.combined_score - a.combined_score)
       .slice(0, topN)
   } catch {
-    // Graceful fallback: return top N by existing score
     return candidates.slice(0, topN)
   }
-}
-
-/**
- * Parses a natural language query to extract structured EpisodeQuery filters.
- * Pure heuristics — no AI.
- */
-function parseQueryFilters(query: string): EpisodeQuery {
-  const q = query.toLowerCase()
-  const filters: EpisodeQuery = {}
-
-  // Multilateral signal
-  if (q.includes('unilateral') || q.includes('us alone') || q.includes('single country')) {
-    filters.multilateral = false
-  } else if (
-    q.includes('multilateral') ||
-    q.includes('coalition') ||
-    q.includes('allied') ||
-    q.includes('g7') ||
-    q.includes('eu and us') ||
-    q.includes('un sanctions')
-  ) {
-    filters.multilateral = true
-  }
-
-  // Sector signal
-  if (q.includes('oil') || q.includes('energy') || q.includes('gas') || q.includes('petroleum')) {
-    filters.sector = 'energy'
-  } else if (q.includes('nuclear') || q.includes('weapon') || q.includes('arms') || q.includes('defense')) {
-    filters.sector = 'defense_nuclear'
-  } else if (q.includes('finance') || q.includes('bank') || q.includes('swift') || q.includes('financial')) {
-    filters.sector = 'finance'
-  } else if (q.includes('tech') || q.includes('semiconductor') || q.includes('chip') || q.includes('export control')) {
-    filters.sector = 'technology'
-  }
-
-  // Enforcement intensity signal
-  if (
-    q.includes('comprehensive') ||
-    q.includes('total embargo') ||
-    q.includes('maximum pressure') ||
-    q.includes('swift ban') ||
-    q.includes('full embargo')
-  ) {
-    filters.enforcement_intensity = 'critical'
-  } else if (
-    q.includes('sectoral') ||
-    q.includes('targeted sector') ||
-    q.includes('broad sanctions')
-  ) {
-    filters.enforcement_intensity = 'high'
-  } else if (q.includes('targeted') || q.includes('individual') || q.includes('travel ban')) {
-    filters.enforcement_intensity = 'medium'
-  }
-
-  // Initiator signals
-  const initiators: string[] = []
-  if (q.includes(' us ') || q.includes('united states') || q.includes('american') || q.includes('washington')) {
-    initiators.push('US')
-  }
-  if (q.includes(' eu ') || q.includes('europe') || q.includes('european union')) {
-    initiators.push('EU')
-  }
-  if (q.includes(' un ') || q.includes('united nations') || q.includes('security council')) {
-    initiators.push('UN')
-  }
-  if (q.includes(' uk ') || q.includes('britain') || q.includes('british')) {
-    initiators.push('UK')
-  }
-  if (initiators.length > 0) {
-    filters.initiators = initiators
-  }
-
-  return filters
 }
 
 export interface RetrievalResult {
@@ -234,53 +210,54 @@ export interface RetrievalResult {
  * Main retrieval pipeline.
  *
  * Stage 1 — Broad retrieval (multi-query + HyDE):
- *   1. Parse structured filters from query (heuristic)
- *   2. Generate 3 query variants + run heuristic filter in parallel
- *   3. HyDE-expand all 4 queries in parallel
- *   4. Embed all 4 HyDE texts in parallel
- *   5. Semantic search for all 4 embeddings in parallel
- *   6. Merge into unified episodeMap (best score wins per episode)
+ *   1. Parse structured filters with Haiku + generate query variants (parallel)
+ *   2. HyDE-expand all 4 queries in parallel
+ *   3. Embed all 4 HyDE texts in parallel
+ *   4. Semantic search for all 4 embeddings in parallel
+ *   5. Merge into unified episodeMap (best score wins per episode)
  *
  * Stage 2 — Precision reranking:
- *   7. Pre-sort, take top 15 candidates
- *   8. Cross-encoder rerank with Claude Haiku → return top N
+ *   6. Pre-sort, take top 15 candidates
+ *   7. Cross-encoder rerank with Claude Haiku → return top N
  */
 export async function retrieveRelevantEpisodes(
   query: string,
   manualFilters?: Partial<EpisodeQuery>,
   topN = 7
 ): Promise<RetrievalResult> {
-  const parsedFilters = parseQueryFilters(query)
+  // Stage 1a: LLM filter parsing + query variants in parallel (both use Haiku)
+  const [parsedFilters, variants] = await Promise.all([
+    parseQueryFilters(query),
+    generateQueryVariants(query),
+  ])
+
   const effectiveFilters: EpisodeQuery = { ...parsedFilters, ...manualFilters }
 
-  // Stage 1a: Query variants + heuristic filter in parallel
-  const [variants, fallbackEpisodes] = await Promise.all([
-    generateQueryVariants(query),
-    filterEpisodes({
-      multilateral: effectiveFilters.multilateral,
-      enforcement_intensity: effectiveFilters.enforcement_intensity,
-      limit: 20,
-    }),
-  ])
+  // Stage 1b: Heuristic DB filter (fast, depends on effectiveFilters)
+  const fallbackEpisodes = await filterEpisodes({
+    multilateral: effectiveFilters.multilateral,
+    enforcement_intensity: effectiveFilters.enforcement_intensity,
+    limit: 20,
+  })
 
   const allQueries = [query, ...variants]
 
-  // Stage 1b: HyDE-expand all queries in parallel
+  // Stage 1c: HyDE-expand all queries in parallel
   const hydeTexts = await Promise.all(allQueries.map(q => generateHyDE(q)))
 
-  // Stage 1c: Embed all HyDE texts in parallel
+  // Stage 1d: Embed all HyDE texts in parallel
   const embeddings = await Promise.all(
     hydeTexts.map(text => generateEmbedding(text).catch(() => null))
   )
 
-  // Stage 1d: Semantic search for each embedding in parallel
+  // Stage 1e: Semantic search for each embedding in parallel
   const semanticResultSets = await Promise.all(
     embeddings.map(emb =>
       emb ? searchEpisodesSemantic(emb, 18, 0.35) : Promise.resolve([])
     )
   )
 
-  // Stage 1e: Merge — keep best combined score per episode across all queries
+  // Stage 1f: Merge — keep best combined score per episode across all queries
   const episodeMap = new Map<string, ScoredEpisode>()
 
   for (const results of semanticResultSets) {

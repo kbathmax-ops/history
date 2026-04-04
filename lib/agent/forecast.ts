@@ -29,15 +29,18 @@ const HAWK_LABELS = new Set([
 ])
 const BACKFIRE_LABELS = new Set(['backfire'])
 
-function aggregateScenarios(outcomesArr: (Outcomes | null)[]): ScenarioProbabilities {
-  const valid = outcomesArr.filter(Boolean) as Outcomes[]
+function aggregateScenarios(
+  pairs: { outcomes: Outcomes | null; weight: number }[]
+): ScenarioProbabilities {
+  const valid = pairs.filter(p => p.outcomes !== null) as { outcomes: Outcomes; weight: number }[]
   if (valid.length === 0) {
     return { base: 0.5, hawkish: 0.25, dove: 0.15, backfire: 0.10 }
   }
 
   let totalBase = 0, totalHawk = 0, totalDove = 0, totalBackfire = 0
+  let totalWeight = 0
 
-  for (const outcomes of valid) {
+  for (const { outcomes, weight } of valid) {
     let base = 0, hawk = 0, dove = 0, back = 0
     for (const s of outcomes.scenarios) {
       const label = s.label.toLowerCase()
@@ -48,22 +51,25 @@ function aggregateScenarios(outcomesArr: (Outcomes | null)[]): ScenarioProbabili
       } else if (DOVE_LABELS.has(label)) {
         dove += s.probability
       } else {
-        // 'status_quo', 'ongoing', 'economic_collapse', etc → base
         base += s.probability
       }
     }
-    totalBase += base
-    totalHawk += hawk
-    totalDove += dove
-    totalBackfire += back
+    totalBase += base * weight
+    totalHawk += hawk * weight
+    totalDove += dove * weight
+    totalBackfire += back * weight
+    totalWeight += weight
   }
 
-  const n = valid.length
+  if (totalWeight === 0) {
+    return { base: 0.5, hawkish: 0.25, dove: 0.15, backfire: 0.10 }
+  }
+
   const probs = {
-    base: totalBase / n,
-    hawkish: totalHawk / n,
-    dove: totalDove / n,
-    backfire: totalBackfire / n,
+    base: totalBase / totalWeight,
+    hawkish: totalHawk / totalWeight,
+    dove: totalDove / totalWeight,
+    backfire: totalBackfire / totalWeight,
   }
 
   // Normalize to sum to 1
@@ -254,13 +260,13 @@ export function computeForecast(
     }
   }
 
-  // Use 6-month outcomes as primary signal, 12-month as secondary
-  const outcomes6mo = episodes.map(e => e.outcomes_6mo)
-  const outcomes12mo = episodes.map(e => e.outcomes_12mo)
+  // Use 6-month outcomes as primary signal, 12-month as secondary.
+  // Each episode's probabilities are weighted by its combined_score (match quality).
+  const pairs6mo = episodes.map(e => ({ outcomes: e.outcomes_6mo, weight: e.combined_score }))
+  const pairs12mo = episodes.map(e => ({ outcomes: e.outcomes_12mo, weight: e.combined_score }))
 
-  // Weight 6mo more heavily (60/40)
-  const probs6 = aggregateScenarios(outcomes6mo)
-  const probs12 = aggregateScenarios(outcomes12mo)
+  const probs6 = aggregateScenarios(pairs6mo)
+  const probs12 = aggregateScenarios(pairs12mo)
 
   const scenario_probs: ScenarioProbabilities = {
     base: probs6.base * 0.6 + probs12.base * 0.4,
@@ -287,6 +293,9 @@ export function computeForecast(
     top_wildcards: extractWildcards(episodes),
     top_lessons: extractTopLessons(episodes),
     supporting_episodes: episodes.map(e => e.episode_id),
-    confidence: Math.min(1, episodes.length / 5),
+    confidence: (() => {
+      const avgScore = episodes.reduce((s, e) => s + e.combined_score, 0) / episodes.length
+      return Math.min(1, (episodes.length / 5) * avgScore)
+    })(),
   }
 }
